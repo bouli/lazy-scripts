@@ -1,22 +1,22 @@
-# Scripts
+# Bouli - Scripts
 
 Script library for productivity.
 
-## Createing links
+### Creating links
 
 ```shell
 make create
 ```
 
-## Cleaning links
+### Cleaning links
 
 ```shell
 make clean
 ```
 
-## Available Scripts
+### Available Scripts
 
-### Sandbox
+#### Sandbox
 ```shell
 bouli-sandbox
 ```
