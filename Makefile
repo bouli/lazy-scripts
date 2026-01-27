@@ -3,9 +3,13 @@
 clean:
 	sudo rm -f /usr/local/bin/bouli-sandbox
 	sudo rm -f /usr/local/bin/bouli-garbage-collector
+
 	sudo rm -f /usr/local/bin/bouli-streaming-interval
 	sudo rm -f /usr/local/bin/bouli-streaming-background
 	sudo rm -f /usr/local/bin/bs
+	sudo rm -f /usr/local/bin/bsi
+	sudo rm -f /usr/local/bin/bss
+	sudo rm -f /usr/local/bin/bsc
 	zsh
 
 create:
@@ -15,8 +19,15 @@ create:
 	chmod +x $(PWD)/development/clean_garbage_collector.sh
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
 	chmod +x $(PWD)/streaming/interval.sh
+
 	sudo ln -s $(PWD)/streaming/background.sh /usr/local/bin/bouli-streaming-background
 	chmod +x $(PWD)/streaming/background.sh
 	sudo ln -s $(PWD)/streaming/bs.py /usr/local/bin/bs
 	chmod +x $(PWD)/streaming/bs.py
+	sudo ln -s $(PWD)/streaming/bsi.sh /usr/local/bin/bsi
+	chmod +x $(PWD)/streaming/bsi.sh
+	sudo ln -s $(PWD)/streaming/bss.sh /usr/local/bin/bss
+	chmod +x $(PWD)/streaming/bss.sh
+	sudo ln -s $(PWD)/streaming/bsc.sh /usr/local/bin/bsc
+	chmod +x $(PWD)/streaming/bsc.sh
 	zsh
