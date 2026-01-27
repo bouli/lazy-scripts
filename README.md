@@ -1,4 +1,4 @@
-# Bouli - Scripts
+# Bouli - Lazy Scripts
 
 Script library for productivity.
 
@@ -14,6 +14,8 @@ make create
 make clean
 ```
 
+## Coding Tools
+
 ### Available Scripts
 
 #### Create and Open Sandbox
@@ -25,3 +27,24 @@ bouli-sandbox
 ```shell
 bouli-garbage-collector
 ```
+
+## Streaming Tools
+
+### Make the boomerang video for interval
+
+```sh
+bouli-streaming-interval
+```
+
+### Make the song for background
+
+```sh
+bouli-streaming-background
+```
+
+### BS - Bouli Say:
+
+```sh
+bs <message-to-the-streaming>
+```
+> Update txt file for OBS.
