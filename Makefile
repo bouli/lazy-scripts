@@ -10,6 +10,7 @@ clean:
 	sudo rm -f /usr/local/bin/bsi
 	sudo rm -f /usr/local/bin/bss
 	sudo rm -f /usr/local/bin/bsc
+	sudo rm -f /usr/local/bin/bso
 	zsh
 
 create:
@@ -30,4 +31,6 @@ create:
 	chmod +x $(PWD)/streaming/bss.sh
 	sudo ln -s $(PWD)/streaming/bsc.sh /usr/local/bin/bsc
 	chmod +x $(PWD)/streaming/bsc.sh
+	sudo ln -s $(PWD)/streaming/bso.sh /usr/local/bin/bso
+	chmod +x $(PWD)/streaming/bso.sh
 	zsh
