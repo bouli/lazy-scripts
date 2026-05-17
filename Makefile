@@ -5,6 +5,7 @@ clean:
 	sudo rm -f /usr/local/bin/bouli-garbage-collector
 	sudo rm -f /usr/local/bin/ralph-afk
 	sudo rm -f /usr/local/bin/push-loop
+	sudo rm -f /usr/local/bin/ai-sbx
 
 	sudo rm -f /usr/local/bin/bouli-streaming-interval
 	sudo rm -f /usr/local/bin/bouli-streaming-background
@@ -27,6 +28,8 @@ create:
 	sudo ln -s $(PWD)/development/push_loop.sh /usr/local/bin/push-loop
 	chmod +x $(PWD)/development/push_loop.sh
 
+	sudo ln -s $(PWD)/development/sbx_launcher.sh /usr/local/bin/ai-sbx
+	chmod +x $(PWD)/development/sbx_launcher.sh
 
 
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
