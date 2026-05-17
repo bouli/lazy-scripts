@@ -3,6 +3,8 @@
 clean:
 	sudo rm -f /usr/local/bin/bouli-sandbox
 	sudo rm -f /usr/local/bin/bouli-garbage-collector
+	sudo rm -f /usr/local/bin/ralph-afk
+	sudo rm -f /usr/local/bin/push-loop
 
 	sudo rm -f /usr/local/bin/bouli-streaming-interval
 	sudo rm -f /usr/local/bin/bouli-streaming-background
@@ -18,6 +20,15 @@ create:
 	chmod +x $(PWD)/development/sandbox_launcher.sh
 	sudo ln -s $(PWD)/development/clean_garbage_collector.sh /usr/local/bin/bouli-garbage-collector
 	chmod +x $(PWD)/development/clean_garbage_collector.sh
+
+	sudo ln -s $(PWD)/development/afk_ralph.sh /usr/local/bin/ralph-afk
+	chmod +x $(PWD)/development/afk_ralph.sh
+
+	sudo ln -s $(PWD)/development/push_loop.sh /usr/local/bin/push-loop
+	chmod +x $(PWD)/development/push_loop.sh
+
+
+
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
 	chmod +x $(PWD)/streaming/interval.sh
 
