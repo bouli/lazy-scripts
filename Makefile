@@ -3,10 +3,12 @@
 clean:
 	sudo rm -f /usr/local/bin/bouli-sandbox
 	sudo rm -f /usr/local/bin/bouli-garbage-collector
+
 	sudo rm -f /usr/local/bin/ralph-afk
 	sudo rm -f /usr/local/bin/push-loop
 	sudo rm -f /usr/local/bin/ai-sbx
 	sudo rm -f /usr/local/bin/ai-sbx-codex
+	sudo rm -f /usr/local/bin/ai-lazy-init
 
 
 	sudo rm -f /usr/local/bin/bouli-streaming-interval
@@ -35,6 +37,9 @@ create:
 
 	sudo ln -s $(PWD)/development/sbx_codex.sh /usr/local/bin/ai-sbx-codex
 	chmod +x $(PWD)/development/sbx_codex.sh
+
+	sudo ln -s $(PWD)/development/ai_lazy_init.sh /usr/local/bin/ai-lazy-init
+	chmod +x $(PWD)/development/ai_lazy_init.sh
 
 
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
