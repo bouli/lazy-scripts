@@ -6,7 +6,7 @@ clean:
 
 	sudo rm -f /usr/local/bin/ralph-afk
 	sudo rm -f /usr/local/bin/push-loop
-	sudo rm -f /usr/local/bin/ai-sbx
+	sudo rm -f /usr/local/bin/ai-sbx-opencode
 	sudo rm -f /usr/local/bin/ai-sbx-codex
 	sudo rm -f /usr/local/bin/ai-lazy-init
 
@@ -32,8 +32,8 @@ create:
 	sudo ln -s $(PWD)/development/push_loop.sh /usr/local/bin/push-loop
 	chmod +x $(PWD)/development/push_loop.sh
 
-	sudo ln -s $(PWD)/development/sbx_launcher.sh /usr/local/bin/ai-sbx
-	chmod +x $(PWD)/development/sbx_launcher.sh
+	sudo ln -s $(PWD)/development/sbx_opencode.sh /usr/local/bin/ai-sbx-opencode
+	chmod +x $(PWD)/development/sbx_opencode.sh
 
 	sudo ln -s $(PWD)/development/sbx_codex.sh /usr/local/bin/ai-sbx-codex
 	chmod +x $(PWD)/development/sbx_codex.sh
