@@ -1,4 +1,4 @@
-# Bouli - Lazy Scripts
+# Bouli - Lazy Scripts - v0.1.0
 
 Script library for productivity.
 
