@@ -26,20 +26,20 @@ create:
 	sudo ln -s $(PWD)/development/clean_garbage_collector.sh /usr/local/bin/bouli-garbage-collector
 	chmod +x $(PWD)/development/clean_garbage_collector.sh
 
-	sudo ln -s $(PWD)/development/afk_ralph.sh /usr/local/bin/ralph-afk
-	chmod +x $(PWD)/development/afk_ralph.sh
+	sudo ln -s $(PWD)/ai/afk_ralph.sh /usr/local/bin/ralph-afk
+	chmod +x $(PWD)/ai/afk_ralph.sh
 
 	sudo ln -s $(PWD)/development/push_loop.sh /usr/local/bin/push-loop
 	chmod +x $(PWD)/development/push_loop.sh
 
-	sudo ln -s $(PWD)/development/sbx_opencode.sh /usr/local/bin/ai-sbx-opencode
-	chmod +x $(PWD)/development/sbx_opencode.sh
+	sudo ln -s $(PWD)/ai/sbx_opencode.sh /usr/local/bin/ai-sbx-opencode
+	chmod +x $(PWD)/ai/sbx_opencode.sh
 
-	sudo ln -s $(PWD)/development/sbx_codex.sh /usr/local/bin/ai-sbx-codex
-	chmod +x $(PWD)/development/sbx_codex.sh
+	sudo ln -s $(PWD)/ai/sbx_codex.sh /usr/local/bin/ai-sbx-codex
+	chmod +x $(PWD)/ai/sbx_codex.sh
 
-	sudo ln -s $(PWD)/development/ai_lazy_init.sh /usr/local/bin/ai-lazy-init
-	chmod +x $(PWD)/development/ai_lazy_init.sh
+	sudo ln -s $(PWD)/ai/ai_lazy_init.sh /usr/local/bin/ai-lazy-init
+	chmod +x $(PWD)/ai/ai_lazy_init.sh
 
 
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
