@@ -6,6 +6,8 @@ clean:
 	sudo rm -f /usr/local/bin/ralph-afk
 	sudo rm -f /usr/local/bin/push-loop
 	sudo rm -f /usr/local/bin/ai-sbx
+	sudo rm -f /usr/local/bin/ai-sbx-codex
+
 
 	sudo rm -f /usr/local/bin/bouli-streaming-interval
 	sudo rm -f /usr/local/bin/bouli-streaming-background
@@ -30,6 +32,9 @@ create:
 
 	sudo ln -s $(PWD)/development/sbx_launcher.sh /usr/local/bin/ai-sbx
 	chmod +x $(PWD)/development/sbx_launcher.sh
+
+	sudo ln -s $(PWD)/development/sbx_codex.sh /usr/local/bin/ai-sbx-codex
+	chmod +x $(PWD)/development/sbx_codex.sh
 
 
 	sudo ln -s $(PWD)/streaming/interval.sh /usr/local/bin/bouli-streaming-interval
