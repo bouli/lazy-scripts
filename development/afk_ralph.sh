@@ -7,10 +7,6 @@ if [ -z "$1" ]; then
 fi
 
 for ((i=1; i<=$1; i++)); do
-  sbx run current-ai -- run --command "ralph" -m ollama/qwen3.5
+  sbx run current-ai -- run --command "ralph" -m ollama/qwen3.5 || echo "go on"
 
-  if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
-    echo "PRD complete after $i iterations."
-    exit 0
-  fi
 done
