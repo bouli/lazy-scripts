@@ -7,6 +7,6 @@ if [ -z "$1" ]; then
 fi
 
 for ((i=1; i<=$1; i++)); do
-  sbx run current-ai -- run --command "ralph" -m ollama/qwen3.5 || echo "go on"
+  sbx run opencode-${PWD##*/} -- run --command "ralph" -m ollama/qwen3.5 || echo "go on"
 
 done

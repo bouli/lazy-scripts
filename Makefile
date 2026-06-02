@@ -4,7 +4,7 @@ clean:
 	sudo rm -f /usr/local/bin/bouli-sandbox
 	sudo rm -f /usr/local/bin/bouli-garbage-collector
 
-	sudo rm -f /usr/local/bin/ralph-afk
+	sudo rm -f /usr/local/bin/ralph-opencode
 	sudo rm -f /usr/local/bin/ralph-codex
 	sudo rm -f /usr/local/bin/push-loop
 	sudo rm -f /usr/local/bin/ai-sbx-opencode
@@ -27,8 +27,8 @@ create:
 	sudo ln -s $(PWD)/development/clean_garbage_collector.sh /usr/local/bin/bouli-garbage-collector
 	chmod +x $(PWD)/development/clean_garbage_collector.sh
 
-	sudo ln -s $(PWD)/ai/afk_ralph.sh /usr/local/bin/ralph-afk
-	chmod +x $(PWD)/ai/afk_ralph.sh
+	sudo ln -s $(PWD)/ai/sbx_opencode_ralph.sh /usr/local/bin/ralph-opencode
+	chmod +x $(PWD)/ai/sbx_opencode_ralph.sh
 
 	sudo ln -s $(PWD)/ai/sbx_codex_ralph.sh /usr/local/bin/ralph-codex
 	chmod +x $(PWD)/ai/sbx_codex_ralph.sh
