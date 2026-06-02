@@ -6,6 +6,13 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+if [ -z "$2" ]; then
+  sleeping_time=0
+else
+  sleeping_time=$2
+fi
+
 for ((i=1; i<=$1; i++)); do
   sbx run codex-${PWD##*/} -- exec "use skill ralph @PRD.md @.issues"
+  sleep $sleeping_time
 done
