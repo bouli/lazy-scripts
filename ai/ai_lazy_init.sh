@@ -12,3 +12,4 @@ SOURCE="$SCRIPT_DIR/lazy-ai-config/"
 DEST="."
 
 cp -R "$SOURCE" "$DEST"
+echo '*' > "$DEST/.agents/.gitignore"
