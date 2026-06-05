@@ -13,6 +13,6 @@ else
 fi
 
 for ((i=1; i<=$1; i++)); do
-  sbx run codex-${PWD##*/} -- exec "use skill ralph @PRD.md @.issues"
+  sbx run codex-${PWD##*/} -- exec "use skill ralph @.agents/PRD.md @.agents/issues @.agents/PROGRESS.md"
   sleep $sleeping_time
 done

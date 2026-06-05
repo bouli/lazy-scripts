@@ -13,3 +13,4 @@ DEST="."
 
 cp -R "$SOURCE" "$DEST"
 echo '*' > "$DEST/.agents/.gitignore"
+echo '*' > "$DEST/.opencode/.gitignore"
