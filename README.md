@@ -72,7 +72,7 @@ make clean
 | --- | --- | --- |
 | `bouli-sandbox` | `development/sandbox_launcher.sh` | Recreates `~/sandbox` with `uv`, runs `uv sync`, and opens it in VS Code. |
 | `dev-sandbox` | `development/sandbox_launcher.sh` | Alias for `bouli-sandbox`. |
-| `bouli-garbage-collector` | `development/clean_garbage_collector.sh` | Removes `.venv` and `__pycache__` folders from the current directory and a small fixed depth below it. |
+| `bouli-garbage-collector` | `development/clean_garbage_collector.sh` | Cleans supported project-local Python, JavaScript, and Go artifacts after listing the matched targets. |
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
 | `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
 | `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
@@ -97,10 +97,34 @@ Create a disposable development sandbox:
 bouli-sandbox
 ```
 
-Clean generated Python environments and caches near the current directory:
+Preview generated Python, JavaScript, and Go cleanup targets in the current project:
+
+```sh
+dev-garbage-collector --dry-run
+```
+
+Clean generated Python, JavaScript, and Go artifacts in the current project:
 
 ```sh
 bouli-garbage-collector
+```
+
+The default cleanup is equivalent to:
+
+```sh
+dev-garbage-collector --all
+```
+
+Run a deeper JavaScript dependency cleanup when you intentionally want to remove `node_modules`:
+
+```sh
+dev-garbage-collector --dependencies
+```
+
+Run broader Go cache cleanup when you intentionally want to clear shared Go build and test caches:
+
+```sh
+dev-garbage-collector --go-cache
 ```
 
 Copy reusable GitHub Actions workflows into the current project:
@@ -158,7 +182,10 @@ ai-ralph-opencode 5
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
 - `dev-push-loop` runs forever until interrupted with `Ctrl+C`.
 - `make create` and `make clean` use `sudo` to modify `/usr/local/bin`.
-- `bouli-garbage-collector` permanently removes matching `.venv` and `__pycache__` directories near the current working directory.
+- `bouli-garbage-collector` and `dev-garbage-collector` refuse to run from `/`, from your home directory, or from a directory without a project marker: `.git`, `pyproject.toml`, `package.json`, or `go.mod`.
+- `bouli-garbage-collector` and `dev-garbage-collector` permanently remove matched project-local Python, JavaScript, and Go artifacts. Use `--dry-run` to preview the same target set without deleting anything.
+- `--dependencies` also removes JavaScript dependencies such as `node_modules`; it is intentionally separate from the default cleanup.
+- `--go-cache` also runs `go clean -cache -testcache`; it is intentionally separate from the default cleanup because it affects Go caches outside the project directory.
 - `dev-lazy-gh` copies workflow files into the current project and rewrites `<pypi_project>` in `publish-pypi.yml` using the current directory name.
 - `ai-ralph-codex` and `ai-ralph-opencode` expect matching `sbx` sandboxes for the current project name.
 
