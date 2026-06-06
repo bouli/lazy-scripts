@@ -8,6 +8,29 @@ usage() {
   echo "Usage: $(basename "$0") [--dry-run]"
 }
 
+refuse_cleanup() {
+  echo "Refusing cleanup: $1" >&2
+  exit 1
+}
+
+is_project_directory() {
+  [ -d .git ] ||
+    [ -f pyproject.toml ] ||
+    [ -f package.json ] ||
+    [ -f go.mod ]
+}
+
+validate_working_directory() {
+  local cwd home
+
+  cwd="$(pwd -P)"
+  home="$(cd "${HOME:-}" 2>/dev/null && pwd -P || true)"
+
+  [ "$cwd" != "/" ] || refuse_cleanup "run from a project directory, not /."
+  [ -z "$home" ] || [ "$cwd" != "$home" ] || refuse_cleanup "run from a project directory, not your home directory."
+  is_project_directory || refuse_cleanup "no project marker found (.git, pyproject.toml, package.json, or go.mod)."
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dry-run)
@@ -25,6 +48,8 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
+
+validate_working_directory
 
 TARGETS_FILE="$(mktemp)"
 trap 'rm -f "$TARGETS_FILE"' EXIT

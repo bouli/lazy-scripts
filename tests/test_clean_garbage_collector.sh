@@ -30,6 +30,7 @@ make_fixture() {
   local root="$1"
 
   mkdir -p "$root/project/.venv"
+  mkdir -p "$root/project/.git"
   mkdir -p "$root/project/src/pkg/__pycache__"
   mkdir -p "$root/project/deep/one/two/three/__pycache__"
   mkdir -p "$root/project/path with spaces/__pycache__"
@@ -92,7 +93,7 @@ test_no_targets_reports_empty_summary() {
   local tmp output
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' RETURN
-  mkdir -p "$tmp/project"
+  mkdir -p "$tmp/project/.git"
 
   output="$(run_in_project "$tmp/project" --dry-run)"
 
@@ -100,8 +101,72 @@ test_no_targets_reports_empty_summary() {
   assert_contains "$output" "Summary: found 0 target(s); removed 0 target(s) (dry run)."
 }
 
+test_refuses_filesystem_root() {
+  local output status
+  set +e
+  output="$(cd / && "$SCRIPT" --dry-run 2>&1)"
+  status=$?
+  set -e
+
+  [ "$status" -ne 0 ] || fail "expected cleanup from / to fail"
+  assert_contains "$output" "Refusing cleanup: run from a project directory, not /."
+}
+
+test_refuses_home_directory() {
+  local tmp output status
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  mkdir -p "$tmp/home"
+
+  set +e
+  output="$(cd "$tmp/home" && HOME="$tmp/home" "$SCRIPT" --dry-run 2>&1)"
+  status=$?
+  set -e
+
+  [ "$status" -ne 0 ] || fail "expected cleanup from home directory to fail"
+  assert_contains "$output" "Refusing cleanup: run from a project directory, not your home directory."
+}
+
+test_refuses_directory_without_project_marker() {
+  local tmp output status
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  mkdir -p "$tmp/project/.venv"
+
+  set +e
+  output="$(run_in_project "$tmp/project" --dry-run 2>&1)"
+  status=$?
+  set -e
+
+  [ "$status" -ne 0 ] || fail "expected markerless cleanup to fail"
+  assert_contains "$output" "Refusing cleanup: no project marker found (.git, pyproject.toml, package.json, or go.mod)."
+  assert_exists "$tmp/project/.venv"
+}
+
+test_accepts_common_project_markers() {
+  local marker tmp output
+
+  for marker in .git pyproject.toml package.json go.mod; do
+    tmp="$(mktemp -d)"
+    mkdir -p "$tmp/project"
+    if [ "$marker" = ".git" ]; then
+      mkdir -p "$tmp/project/.git"
+    else
+      touch "$tmp/project/$marker"
+    fi
+
+    output="$(run_in_project "$tmp/project" --dry-run)"
+    assert_contains "$output" "Summary: found 0 target(s); removed 0 target(s) (dry run)."
+    rm -rf "$tmp"
+  done
+}
+
 test_dry_run_prints_targets_and_deletes_nothing
 test_delete_removes_same_targets_dry_run_reports
 test_no_targets_reports_empty_summary
+test_refuses_filesystem_root
+test_refuses_home_directory
+test_refuses_directory_without_project_marker
+test_accepts_common_project_markers
 
 echo "All clean_garbage_collector tests passed."
