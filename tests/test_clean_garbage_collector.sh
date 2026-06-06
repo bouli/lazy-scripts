@@ -168,6 +168,61 @@ test_delete_removes_same_targets_dry_run_reports() {
   assert_exists "$tmp/project/keep.txt"
 }
 
+test_all_option_matches_default_cleanup_scope() {
+  local tmp output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_fixture "$tmp"
+
+  output="$(run_in_project "$tmp/project" --all)"
+
+  assert_contains "$output" "./.venv"
+  assert_contains "$output" "./venv"
+  assert_contains "$output" "./src/pkg/__pycache__"
+  assert_contains "$output" "./src/pkg/.pytest_cache"
+  assert_contains "$output" "./src/pkg/.ruff_cache"
+  assert_contains "$output" "./src/pkg/.mypy_cache"
+  assert_contains "$output" "./deep/one/two/three/__pycache__"
+  assert_contains "$output" "./path with spaces/__pycache__"
+  assert_contains "$output" "./htmlcov"
+  assert_contains "$output" "./example.egg-info"
+  assert_contains "$output" "./dist"
+  assert_contains "$output" "./build"
+  assert_contains "$output" "./.coverage"
+  assert_contains "$output" "Summary: found 13 target(s); removed 13 target(s)."
+  assert_not_exists "$tmp/project/.venv"
+  assert_not_exists "$tmp/project/venv"
+  assert_not_exists "$tmp/project/src/pkg/__pycache__"
+  assert_not_exists "$tmp/project/src/pkg/.pytest_cache"
+  assert_not_exists "$tmp/project/src/pkg/.ruff_cache"
+  assert_not_exists "$tmp/project/src/pkg/.mypy_cache"
+  assert_not_exists "$tmp/project/deep/one/two/three/__pycache__"
+  assert_not_exists "$tmp/project/path with spaces/__pycache__"
+  assert_not_exists "$tmp/project/htmlcov"
+  assert_not_exists "$tmp/project/example.egg-info"
+  assert_not_exists "$tmp/project/dist"
+  assert_not_exists "$tmp/project/build"
+  assert_not_exists "$tmp/project/.coverage"
+}
+
+test_help_documents_final_cli_flags() {
+  local output
+
+  output="$("$SCRIPT" --help)"
+
+  assert_contains "$output" "Usage:"
+  assert_contains "$output" "--all"
+  assert_contains "$output" "Default cleanup is equivalent to --all"
+  assert_contains "$output" "project-local Python,"
+  assert_contains "$output" "JavaScript, and Go artifacts"
+  assert_contains "$output" "There are no separate language flags."
+  assert_contains "$output" "--dry-run"
+  assert_contains "$output" "--dependencies"
+  assert_contains "$output" "node_modules"
+  assert_contains "$output" "--go-cache"
+  assert_contains "$output" "go clean -cache -testcache"
+}
+
 test_no_targets_reports_empty_summary() {
   local tmp output
   tmp="$(mktemp -d)"
@@ -394,6 +449,8 @@ test_go_cache_option_reports_missing_go_after_local_cleanup() {
 
 test_dry_run_prints_targets_and_deletes_nothing
 test_delete_removes_same_targets_dry_run_reports
+test_all_option_matches_default_cleanup_scope
+test_help_documents_final_cli_flags
 test_no_targets_reports_empty_summary
 test_refuses_filesystem_root
 test_refuses_home_directory

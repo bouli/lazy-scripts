@@ -7,7 +7,18 @@ CLEAN_DEPENDENCIES=false
 CLEAN_GO_CACHE=false
 
 usage() {
-  echo "Usage: $(basename "$0") [--dry-run] [--dependencies] [--go-cache]"
+  cat <<EOF
+Usage: $(basename "$0") [--all] [--dry-run] [--dependencies] [--go-cache]
+
+Default cleanup is equivalent to --all and includes project-local Python,
+JavaScript, and Go artifacts. There are no separate language flags.
+
+Options:
+  --all           Clean all supported project-local artifacts (default).
+  --dry-run       Print targets without deleting them.
+  --dependencies  Also remove JavaScript dependencies such as node_modules.
+  --go-cache      Also run: go clean -cache -testcache.
+EOF
 }
 
 refuse_cleanup() {
@@ -35,6 +46,8 @@ validate_working_directory() {
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --all)
+      ;;
     --dry-run)
       DRY_RUN=true
       ;;

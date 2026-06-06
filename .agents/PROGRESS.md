@@ -35,3 +35,11 @@
 - Reported Go cache cleanup state in dry-run and delete output.
 - Preserved arbitrary `bin/` directories by default.
 - Added shell command tests for default Go cleanup, dry-run external cache reporting, stubbed explicit Go cache cleanup, and missing Go messaging after local cleanup.
+
+## 2026-06-06 - Issue 006: design simple CLI flags
+
+- Added an explicit `--all` option as a synonym for the default cleanup behavior.
+- Kept common usage short by making no-flag cleanup equivalent to `--all`.
+- Kept language scopes bundled into the default project-local Python, JavaScript, and Go cleanup instead of adding separate language flags.
+- Kept broader cleanup explicit through `--dependencies` for `node_modules` and `--go-cache` for `go clean -cache -testcache`.
+- Updated help output and shell command tests to document and verify the final flag set.
