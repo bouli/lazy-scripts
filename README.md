@@ -1,6 +1,6 @@
 # Bouli Lazy Scripts v0.3.1
 
-Personal command-line scripts for development, AI sandbox workflows, and OBS streaming automation.
+Personal command-line scripts for development and AI sandbox workflows.
 
 This repository is intended to be installed by creating symlinks from the scripts in this repo into `/usr/local/bin`. After installation, the commands can be run from any shell.
 
@@ -10,24 +10,21 @@ This repository is intended to be installed by creating symlinks from the script
 .
 ├── Makefile                         # Installs/removes command symlinks
 ├── ai/                              # AI sandbox helper scripts
-│   ├── afk_ralph.sh
 │   ├── ai_lazy_init.sh
 │   ├── sbx_cline.sh
 │   ├── sbx_codex.sh
+│   ├── sbx_codex_ralph.sh
 │   ├── sbx_opencode.sh
-│   └── lazy-ai-config/opencode.json
+│   ├── sbx_opencode_ralph.sh
+│   └── lazy-ai-config/
+│       ├── .agents/
+│       └── .opencode/opencode.json
 ├── development/                     # General development utilities
 │   ├── clean_garbage_collector.sh
+│   ├── gh_lazy_init.sh
+│   ├── lazy-gh-workflow/
 │   ├── push_loop.sh
 │   └── sandbox_launcher.sh
-└── streaming/                       # OBS and streaming helpers
-    ├── background.sh
-    ├── bs.py
-    ├── bsc.sh
-    ├── bsi.sh
-    ├── bso.sh
-    ├── bss.sh
-    └── interval.sh
 ```
 
 ## Requirements
@@ -47,9 +44,6 @@ Optional runtime tools, depending on which scripts you use:
 - `uv` and `uvx`
 - `code` command from Visual Studio Code
 - `git`
-- `ffmpeg`
-- OBS installed at `/Applications/OBS.app`
-- Python 3 for `bs`
 - local Ollama server on `localhost:11434` for the OpenCode sandbox config
 
 ## Install Commands
@@ -68,7 +62,7 @@ To remove the installed symlinks:
 make clean
 ```
 
-`make clean` only removes the command symlinks listed in the Makefile. It does not delete this repository or generated streaming files.
+`make clean` only removes the command symlinks listed in the Makefile. It does not delete this repository or files copied into other projects.
 
 ## Installed Commands
 
@@ -77,8 +71,11 @@ make clean
 | Command | Source | Purpose |
 | --- | --- | --- |
 | `bouli-sandbox` | `development/sandbox_launcher.sh` | Recreates `~/sandbox` with `uv`, runs `uv sync`, and opens it in VS Code. |
+| `dev-sandbox` | `development/sandbox_launcher.sh` | Alias for `bouli-sandbox`. |
 | `bouli-garbage-collector` | `development/clean_garbage_collector.sh` | Removes `.venv` and `__pycache__` folders from the current directory and a small fixed depth below it. |
-| `push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
+| `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
+| `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
+| `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
 
 ### AI
 
@@ -86,22 +83,11 @@ make clean
 | --- | --- | --- |
 | `ai-sbx-codex` | `ai/sbx_codex.sh` | Ensures an `openai` secret exists in `sbx`, creates a Codex sandbox named from the current directory, then runs it. |
 | `ai-sbx-opencode` | `ai/sbx_opencode.sh` | Recreates and runs an OpenCode sandbox named from the current directory, with access to local Ollama. |
-| `ai-lazy-init` | `ai/ai_lazy_init.sh` | Copies `ai/lazy-ai-config/` into the current directory. |
-| `ralph-afk <iterations>` | `ai/afk_ralph.sh` | Runs `ralph` inside the `current-ai` sandbox repeatedly. |
+| `ai-lazy-init` | `ai/ai_lazy_init.sh` | Copies `ai/lazy-ai-config/` into the current directory, including `.agents/` skills and `.opencode/opencode.json`. |
+| `ai-ralph-codex <iterations> [sleep_seconds]` | `ai/sbx_codex_ralph.sh` | Runs the Ralph Codex skill inside the current project's Codex sandbox repeatedly, optionally sleeping between runs. |
+| `ai-ralph-opencode <iterations>` | `ai/sbx_opencode_ralph.sh` | Runs the Ralph OpenCode command inside the current project's OpenCode sandbox repeatedly. |
 
 `ai/sbx_cline.sh` exists in the repository but is not linked by the Makefile. It appears to be a draft Cline sandbox setup script.
-
-### Streaming
-
-| Command | Source | Purpose |
-| --- | --- | --- |
-| `bs <message>` | `streaming/bs.py` | Writes a wrapped message to `streaming/public/message.txt` for OBS text sources. |
-| `bsi` | `streaming/bsi.sh` | Runs `bouliobs interval` through `uvx`. |
-| `bsc` | `streaming/bsc.sh` | Runs `bouliobs cam` through `uvx`. |
-| `bss` | `streaming/bss.sh` | Runs `bouliobs screen` through `uvx`. |
-| `bso` | `streaming/bso.sh` | Opens OBS. |
-| `bouli-streaming-background` | `streaming/background.sh` | Concatenates WAV files from `~/scripts/streaming/inputs/background/` into `~/scripts/streaming/public/background.wav`. |
-| `bouli-streaming-interval` | `streaming/interval.sh` | Builds a forward-and-reverse interval MP4 from `~/scripts/streaming/inputs/interval/video.mp4` and copies `video.txt` into the public folder. |
 
 ## Common Usage
 
@@ -115,6 +101,12 @@ Clean generated Python environments and caches near the current directory:
 
 ```sh
 bouli-garbage-collector
+```
+
+Copy reusable GitHub Actions workflows into the current project:
+
+```sh
+dev-lazy-gh
 ```
 
 Start Codex in an `sbx` sandbox for the current project:
@@ -135,39 +127,40 @@ Copy the OpenCode lazy AI config into the current directory:
 ai-lazy-init
 ```
 
-Write a message for OBS:
+Run Ralph with Codex for five iterations, sleeping 30 seconds between runs:
 
 ```sh
-bs Starting soon
+ai-ralph-codex 5 30
 ```
 
-This writes to:
+Run Ralph with OpenCode for five iterations:
 
-```text
-streaming/public/message.txt
+```sh
+ai-ralph-opencode 5
 ```
 
 ## Generated Files and Paths
 
-The streaming scripts use these generated folders:
+`ai-lazy-init` copies these paths into the current project:
 
-- `~/scripts/streaming/wrk/`
-- `~/scripts/streaming/public/`
+- `.agents/`
+- `.agents/.gitignore`
+- `.opencode/opencode.json`
+- `.opencode/.gitignore`
 
-Expected input folders for media scripts:
+`dev-lazy-gh` copies these paths into the current project:
 
-- `~/scripts/streaming/inputs/background/` containing `.wav` files
-- `~/scripts/streaming/inputs/interval/` containing `video.mp4` and `video.txt`
-
-These input folders are not created by `make create`.
+- `.github/workflows/ci.yml`
+- `.github/workflows/publish-pypi.yml`
 
 ## Safety Notes
 
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
-- `push-loop` runs forever until interrupted with `Ctrl+C`.
+- `dev-push-loop` runs forever until interrupted with `Ctrl+C`.
 - `make create` and `make clean` use `sudo` to modify `/usr/local/bin`.
 - `bouli-garbage-collector` permanently removes matching `.venv` and `__pycache__` directories near the current working directory.
-- The streaming build scripts delete files inside `~/scripts/streaming/wrk/` before rebuilding media.
+- `dev-lazy-gh` copies workflow files into the current project and rewrites `<pypi_project>` in `publish-pypi.yml` using the current directory name.
+- `ai-ralph-codex` and `ai-ralph-opencode` expect matching `sbx` sandboxes for the current project name.
 
 ## Notes for AI Agents
 
@@ -198,5 +191,5 @@ When changing behavior:
 5. For Python changes, run:
 
    ```sh
-   python3 -m py_compile streaming/bs.py
+   python3 -m py_compile path/to/script.py
    ```
