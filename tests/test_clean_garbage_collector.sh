@@ -70,6 +70,16 @@ make_javascript_fixture() {
   touch "$root/project/node_modules/keep.js"
 }
 
+make_go_fixture() {
+  local root="$1"
+
+  mkdir -p "$root/project/bin"
+  touch "$root/project/go.mod"
+  touch "$root/project/coverage.out"
+  touch "$root/project/pkg.test"
+  touch "$root/project/bin/tool"
+}
+
 run_in_project() {
   local project="$1"
   shift
@@ -290,6 +300,98 @@ test_dependency_option_removes_node_modules() {
   assert_not_exists "$tmp/project/node_modules"
 }
 
+test_go_targets_are_cleaned_by_default() {
+  local tmp output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_go_fixture "$tmp"
+
+  output="$(run_in_project "$tmp/project")"
+
+  assert_contains "$output" "Go cache cleanup: disabled"
+  assert_contains "$output" "./coverage.out"
+  assert_contains "$output" "./pkg.test"
+  assert_contains "$output" "Summary: found 2 target(s); removed 2 target(s)."
+  assert_not_contains "$output" "./bin"
+  assert_not_exists "$tmp/project/coverage.out"
+  assert_not_exists "$tmp/project/pkg.test"
+  assert_exists "$tmp/project/bin"
+  assert_exists "$tmp/project/bin/tool"
+}
+
+test_go_cache_dry_run_reports_external_cleanup_without_running_it() {
+  local tmp fake_bin output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_go_fixture "$tmp"
+  fake_bin="$tmp/fake-bin"
+  mkdir -p "$fake_bin"
+  printf '#!/bin/sh\necho "$@" > "%s/go-called"\n' "$tmp" > "$fake_bin/go"
+  chmod +x "$fake_bin/go"
+
+  output="$(
+    cd "$tmp/project"
+    PATH="$fake_bin:$PATH" "$SCRIPT" --dry-run --go-cache
+  )"
+
+  assert_contains "$output" "Go cache cleanup: enabled (would run: go clean -cache -testcache)"
+  assert_contains "$output" "./coverage.out"
+  assert_contains "$output" "./pkg.test"
+  assert_contains "$output" "Summary: found 2 target(s); removed 0 target(s) (dry run)."
+  assert_exists "$tmp/project/coverage.out"
+  assert_exists "$tmp/project/pkg.test"
+  assert_not_exists "$tmp/go-called"
+}
+
+test_go_cache_option_runs_explicit_go_clean() {
+  local tmp fake_bin output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_go_fixture "$tmp"
+  fake_bin="$tmp/fake-bin"
+  mkdir -p "$fake_bin"
+  printf '#!/bin/sh\necho "$@" > "%s/go-called"\n' "$tmp" > "$fake_bin/go"
+  chmod +x "$fake_bin/go"
+
+  output="$(
+    cd "$tmp/project"
+    PATH="$fake_bin:$PATH" "$SCRIPT" --go-cache
+  )"
+
+  assert_contains "$output" "Go cache cleanup: enabled (would run: go clean -cache -testcache)"
+  assert_contains "$output" "Summary: found 2 target(s); removed 2 target(s)."
+  assert_contains "$output" "Go cache cleanup: completed."
+  assert_not_exists "$tmp/project/coverage.out"
+  assert_not_exists "$tmp/project/pkg.test"
+  assert_contains "$(cat "$tmp/go-called")" "clean -cache -testcache"
+}
+
+test_go_cache_option_reports_missing_go_after_local_cleanup() {
+  local tmp fake_bin output status
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_go_fixture "$tmp"
+  fake_bin="$tmp/fake-bin"
+  mkdir -p "$fake_bin"
+  ln -s "$(command -v find)" "$fake_bin/find"
+  ln -s "$(command -v mktemp)" "$fake_bin/mktemp"
+  ln -s "$(command -v rm)" "$fake_bin/rm"
+
+  set +e
+  output="$(
+    cd "$tmp/project"
+    PATH="$fake_bin" "$SCRIPT" --go-cache 2>&1
+  )"
+  status=$?
+  set -e
+
+  [ "$status" -ne 0 ] || fail "expected --go-cache without go to fail"
+  assert_contains "$output" "Go cache cleanup failed: go command not found; install Go or rerun without --go-cache."
+  assert_not_exists "$tmp/project/coverage.out"
+  assert_not_exists "$tmp/project/pkg.test"
+  assert_exists "$tmp/project/bin"
+}
+
 test_dry_run_prints_targets_and_deletes_nothing
 test_delete_removes_same_targets_dry_run_reports
 test_no_targets_reports_empty_summary
@@ -300,5 +402,9 @@ test_accepts_common_project_markers
 test_javascript_targets_are_cleaned_by_default_without_dependencies
 test_javascript_dry_run_reports_dependency_cleanup_state
 test_dependency_option_removes_node_modules
+test_go_targets_are_cleaned_by_default
+test_go_cache_dry_run_reports_external_cleanup_without_running_it
+test_go_cache_option_runs_explicit_go_clean
+test_go_cache_option_reports_missing_go_after_local_cleanup
 
 echo "All clean_garbage_collector tests passed."

@@ -4,9 +4,10 @@ set -euo pipefail
 
 DRY_RUN=false
 CLEAN_DEPENDENCIES=false
+CLEAN_GO_CACHE=false
 
 usage() {
-  echo "Usage: $(basename "$0") [--dry-run] [--dependencies]"
+  echo "Usage: $(basename "$0") [--dry-run] [--dependencies] [--go-cache]"
 }
 
 refuse_cleanup() {
@@ -39,6 +40,9 @@ while [ "$#" -gt 0 ]; do
       ;;
     --dependencies)
       CLEAN_DEPENDENCIES=true
+      ;;
+    --go-cache)
+      CLEAN_GO_CACHE=true
       ;;
     -h|--help)
       usage
@@ -81,7 +85,7 @@ find_cleanup_targets() {
         -name dist -o \
         -name build \
       \) -prune -print0 \) -o \
-      \( -type f -name .coverage -print0 \)
+      \( -type f \( -name .coverage -o -name coverage.out -o -name '*.test' \) -print0 \)
     return
   fi
 
@@ -105,7 +109,7 @@ find_cleanup_targets() {
       -name dist -o \
       -name build \
     \) -prune -print0 \) -o \
-    \( -type f -name .coverage -print0 \)
+    \( -type f \( -name .coverage -o -name coverage.out -o -name '*.test' \) -print0 \)
 }
 
 TARGET_COUNT=0
@@ -121,6 +125,11 @@ find_cleanup_targets > "$TARGETS_FILE"
 
 echo "Cleanup targets:"
 echo "JavaScript dependency cleanup: $([ "$CLEAN_DEPENDENCIES" = true ] && echo enabled || echo disabled)"
+if [ "$CLEAN_GO_CACHE" = true ]; then
+  echo "Go cache cleanup: enabled (would run: go clean -cache -testcache)"
+else
+  echo "Go cache cleanup: disabled"
+fi
 print_targets
 
 if [ "$TARGET_COUNT" -eq 0 ]; then
@@ -139,3 +148,13 @@ while IFS= read -r -d '' target; do
 done < "$TARGETS_FILE"
 
 echo "Summary: found $TARGET_COUNT target(s); removed $REMOVED_COUNT target(s)."
+
+if [ "$CLEAN_GO_CACHE" = true ]; then
+  if ! command -v go >/dev/null 2>&1; then
+    echo "Go cache cleanup failed: go command not found; install Go or rerun without --go-cache." >&2
+    exit 1
+  fi
+
+  go clean -cache -testcache
+  echo "Go cache cleanup: completed."
+fi

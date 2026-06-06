@@ -27,3 +27,11 @@
 - Added an explicit `--dependencies` option that includes `node_modules` as a cleanup target while still pruning its contents.
 - Printed whether JavaScript dependency cleanup is enabled in dry-run and delete output.
 - Added shell command tests for default JavaScript cleanup, dry-run dependency reporting, and explicit dependency cleanup.
+
+## 2026-06-06 - Issue 005: add Go cleanup mode
+
+- Added default project-local Go cleanup discovery for `coverage.out` and generated `*.test` binaries.
+- Added an explicit `--go-cache` option for broader `go clean -cache -testcache` cleanup.
+- Reported Go cache cleanup state in dry-run and delete output.
+- Preserved arbitrary `bin/` directories by default.
+- Added shell command tests for default Go cleanup, dry-run external cache reporting, stubbed explicit Go cache cleanup, and missing Go messaging after local cleanup.
