@@ -26,6 +26,13 @@ assert_contains() {
   esac
 }
 
+assert_not_contains() {
+  case "$1" in
+    *"$2"*) fail "expected output not to contain: $2" ;;
+    *) ;;
+  esac
+}
+
 make_fixture() {
   local root="$1"
 
@@ -44,6 +51,23 @@ make_fixture() {
   mkdir -p "$root/project/build"
   touch "$root/project/.coverage"
   touch "$root/project/keep.txt"
+}
+
+make_javascript_fixture() {
+  local root="$1"
+
+  mkdir -p "$root/project"
+  touch "$root/project/package.json"
+  mkdir -p "$root/project/.next"
+  mkdir -p "$root/project/.nuxt"
+  mkdir -p "$root/project/.svelte-kit"
+  mkdir -p "$root/project/.turbo"
+  mkdir -p "$root/project/.vite"
+  mkdir -p "$root/project/coverage"
+  mkdir -p "$root/project/dist"
+  mkdir -p "$root/project/build"
+  mkdir -p "$root/project/node_modules/.vite"
+  touch "$root/project/node_modules/keep.js"
 }
 
 run_in_project() {
@@ -206,6 +230,66 @@ test_accepts_common_project_markers() {
   done
 }
 
+test_javascript_targets_are_cleaned_by_default_without_dependencies() {
+  local tmp output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_javascript_fixture "$tmp"
+
+  output="$(run_in_project "$tmp/project")"
+
+  assert_contains "$output" "JavaScript dependency cleanup: disabled"
+  assert_contains "$output" "./.next"
+  assert_contains "$output" "./.nuxt"
+  assert_contains "$output" "./.svelte-kit"
+  assert_contains "$output" "./.turbo"
+  assert_contains "$output" "./.vite"
+  assert_contains "$output" "./coverage"
+  assert_contains "$output" "./dist"
+  assert_contains "$output" "./build"
+  assert_contains "$output" "Summary: found 8 target(s); removed 8 target(s)."
+  assert_not_contains "$output" "./node_modules"
+  assert_not_exists "$tmp/project/.next"
+  assert_not_exists "$tmp/project/.nuxt"
+  assert_not_exists "$tmp/project/.svelte-kit"
+  assert_not_exists "$tmp/project/.turbo"
+  assert_not_exists "$tmp/project/.vite"
+  assert_not_exists "$tmp/project/coverage"
+  assert_not_exists "$tmp/project/dist"
+  assert_not_exists "$tmp/project/build"
+  assert_exists "$tmp/project/node_modules"
+  assert_exists "$tmp/project/node_modules/.vite"
+}
+
+test_javascript_dry_run_reports_dependency_cleanup_state() {
+  local tmp output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_javascript_fixture "$tmp"
+
+  output="$(run_in_project "$tmp/project" --dry-run --dependencies)"
+
+  assert_contains "$output" "JavaScript dependency cleanup: enabled"
+  assert_contains "$output" "./node_modules"
+  assert_contains "$output" "Summary: found 9 target(s); removed 0 target(s) (dry run)."
+  assert_exists "$tmp/project/node_modules"
+  assert_exists "$tmp/project/.next"
+}
+
+test_dependency_option_removes_node_modules() {
+  local tmp output
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' RETURN
+  make_javascript_fixture "$tmp"
+
+  output="$(run_in_project "$tmp/project" --dependencies)"
+
+  assert_contains "$output" "JavaScript dependency cleanup: enabled"
+  assert_contains "$output" "./node_modules"
+  assert_contains "$output" "Summary: found 9 target(s); removed 9 target(s)."
+  assert_not_exists "$tmp/project/node_modules"
+}
+
 test_dry_run_prints_targets_and_deletes_nothing
 test_delete_removes_same_targets_dry_run_reports
 test_no_targets_reports_empty_summary
@@ -213,5 +297,8 @@ test_refuses_filesystem_root
 test_refuses_home_directory
 test_refuses_directory_without_project_marker
 test_accepts_common_project_markers
+test_javascript_targets_are_cleaned_by_default_without_dependencies
+test_javascript_dry_run_reports_dependency_cleanup_state
+test_dependency_option_removes_node_modules
 
 echo "All clean_garbage_collector tests passed."

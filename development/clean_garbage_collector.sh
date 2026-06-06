@@ -3,9 +3,10 @@
 set -euo pipefail
 
 DRY_RUN=false
+CLEAN_DEPENDENCIES=false
 
 usage() {
-  echo "Usage: $(basename "$0") [--dry-run]"
+  echo "Usage: $(basename "$0") [--dry-run] [--dependencies]"
 }
 
 refuse_cleanup() {
@@ -36,6 +37,9 @@ while [ "$#" -gt 0 ]; do
     --dry-run)
       DRY_RUN=true
       ;;
+    --dependencies)
+      CLEAN_DEPENDENCIES=true
+      ;;
     -h|--help)
       usage
       exit 0
@@ -55,6 +59,32 @@ TARGETS_FILE="$(mktemp)"
 trap 'rm -f "$TARGETS_FILE"' EXIT
 
 find_cleanup_targets() {
+  if [ "$CLEAN_DEPENDENCIES" = true ]; then
+    find . \
+      \( -type d -name .git -prune \) -o \
+      \( -type d -name node_modules -prune -print0 \) -o \
+      \( -type d \( \
+        -name .venv -o \
+        -name venv -o \
+        -name __pycache__ -o \
+        -name .pytest_cache -o \
+        -name .ruff_cache -o \
+        -name .mypy_cache -o \
+        -name htmlcov -o \
+        -name '*.egg-info' -o \
+        -name .next -o \
+        -name .nuxt -o \
+        -name .svelte-kit -o \
+        -name .turbo -o \
+        -name .vite -o \
+        -name coverage -o \
+        -name dist -o \
+        -name build \
+      \) -prune -print0 \) -o \
+      \( -type f -name .coverage -print0 \)
+    return
+  fi
+
   find . \
     \( -type d \( -name .git -o -name node_modules \) -prune \) -o \
     \( -type d \( \
@@ -66,6 +96,12 @@ find_cleanup_targets() {
       -name .mypy_cache -o \
       -name htmlcov -o \
       -name '*.egg-info' -o \
+      -name .next -o \
+      -name .nuxt -o \
+      -name .svelte-kit -o \
+      -name .turbo -o \
+      -name .vite -o \
+      -name coverage -o \
       -name dist -o \
       -name build \
     \) -prune -print0 \) -o \
@@ -84,6 +120,7 @@ print_targets() {
 find_cleanup_targets > "$TARGETS_FILE"
 
 echo "Cleanup targets:"
+echo "JavaScript dependency cleanup: $([ "$CLEAN_DEPENDENCIES" = true ] && echo enabled || echo disabled)"
 print_targets
 
 if [ "$TARGET_COUNT" -eq 0 ]; then

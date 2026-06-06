@@ -19,3 +19,11 @@
 - Kept `.venv` and nested `__pycache__` cleanup in the default command behavior.
 - Pruned `.git` and `node_modules` during discovery to keep project-local traversal bounded.
 - Updated shell command tests to verify dry-run output, deletion, preservation of unrelated files, and paths with spaces for the expanded Python target set.
+
+## 2026-06-06 - Issue 004: add JavaScript cleanup mode
+
+- Added JavaScript cleanup discovery for `.next`, `.nuxt`, `.svelte-kit`, `.turbo`, `.vite`, `coverage`, `dist`, and `build`.
+- Kept `node_modules` preserved by default and pruned during traversal.
+- Added an explicit `--dependencies` option that includes `node_modules` as a cleanup target while still pruning its contents.
+- Printed whether JavaScript dependency cleanup is enabled in dry-run and delete output.
+- Added shell command tests for default JavaScript cleanup, dry-run dependency reporting, and explicit dependency cleanup.
