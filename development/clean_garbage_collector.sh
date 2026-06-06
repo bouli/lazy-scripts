@@ -56,8 +56,20 @@ trap 'rm -f "$TARGETS_FILE"' EXIT
 
 find_cleanup_targets() {
   find . \
-    \( -type d -name .venv -o -type d -name __pycache__ \) \
-    -prune -print0
+    \( -type d \( -name .git -o -name node_modules \) -prune \) -o \
+    \( -type d \( \
+      -name .venv -o \
+      -name venv -o \
+      -name __pycache__ -o \
+      -name .pytest_cache -o \
+      -name .ruff_cache -o \
+      -name .mypy_cache -o \
+      -name htmlcov -o \
+      -name '*.egg-info' -o \
+      -name dist -o \
+      -name build \
+    \) -prune -print0 \) -o \
+    \( -type f -name .coverage -print0 \)
 }
 
 TARGET_COUNT=0
