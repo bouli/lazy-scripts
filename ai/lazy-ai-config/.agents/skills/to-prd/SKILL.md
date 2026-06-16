@@ -73,4 +73,8 @@ A description of the things that are out of scope for this PRD.
 
 Any further notes about the feature.
 
+## Latest Git Reference
+
+A reference of the latest git commit to track when this document was written
+
 </prd-template>
