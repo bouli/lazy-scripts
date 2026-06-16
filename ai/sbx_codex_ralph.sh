@@ -12,7 +12,11 @@ else
   sleeping_time=$2
 fi
 
+project_name="${PWD##*/}"
+project_name="${project_name//[^[:alnum:]-]/-}"
+sandbox_name="codex-${project_name}"
+
 for ((i=1; i<=$1; i++)); do
-  sbx run codex-${PWD##*/} -- exec "use skill ralph @.agents/PRD.md @.agents/issues @.agents/PROGRESS.md"
+  sbx run "$sandbox_name" -- exec "use skill ralph @.agents/PRD.md @.agents/issues @.agents/PROGRESS.md"
   sleep $sleeping_time
 done

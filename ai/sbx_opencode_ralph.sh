@@ -6,7 +6,11 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+project_name="${PWD##*/}"
+project_name="${project_name//[^[:alnum:]-]/-}"
+sandbox_name="opencode-${project_name}"
+
 for ((i=1; i<=$1; i++)); do
-  sbx run opencode-${PWD##*/} -- run --command "ralph" -m ollama/qwen3.5 || echo "go on"
+  sbx run "$sandbox_name" -- run --command "ralph" -m ollama/qwen3.5 || echo "go on"
 
 done
