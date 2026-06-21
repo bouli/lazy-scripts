@@ -202,6 +202,12 @@ Push a local folder into a named portfolio project:
 lazy-folders push .notes --to-project template-python --yes
 ```
 
+Push every locally available folder that is already known by a named portfolio project:
+
+```sh
+lazy-folders push --to-project template-python --overwrite --yes
+```
+
 Replace same-path portfolio files while pushing:
 
 ```sh
@@ -337,6 +343,8 @@ Normal listing hides internal metadata such as `.lazy-folders.yml`.
 - `lazy-folders push --overwrite` prompts before replacing same-path portfolio files unless `--yes` is also provided.
 - `lazy-folders push` does not copy the target folder's top-level `.gitignore`, any `.git` directory, or internal `.lazy-folders.yml` metadata into saved content.
 - `lazy-folders push --to-project <project-folder>` writes to the named portfolio project and applies that destination before selecting folders for a no-argument push.
+- Lazy folder verification lives in `tests/test_lazy_folders_*.sh`. The acceptance pass covers config initialization, project name resolution, metadata collision handling, copy exclusions, list output, prompt handling, overwrite behavior, template pulls, and explicit push destinations.
+- Destructive mirror sync is intentionally unsupported. Sync commands merge files, preserve destination-only files, and replace same-path files only with `--overwrite`.
 
 ## Notes for AI Agents
 
