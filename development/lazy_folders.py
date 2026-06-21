@@ -667,6 +667,7 @@ def push_command(args: argparse.Namespace) -> int:
         if not source_target.is_dir():
             raise RuntimeError(f"Local target folder does not exist: {source_target}")
         warn_non_dot_target(target_name)
+    ensure_local_target_gitignores(source_targets, yes=args.yes)
 
     metadata_path = ensure_portfolio_project_metadata(
         portfolio_path,
