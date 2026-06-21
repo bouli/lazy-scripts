@@ -22,6 +22,7 @@ This repository is intended to be installed by creating symlinks from the script
 ├── development/                     # General development utilities
 │   ├── clean_garbage_collector.sh
 │   ├── gh_lazy_init.sh
+│   ├── lazy_folders.py
 │   ├── lazy-gh-workflow/
 │   ├── push_loop.sh
 │   └── sandbox_launcher.sh
@@ -76,6 +77,8 @@ make clean
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
 | `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
 | `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
+| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Initial support includes `init`. |
+| `dev-lazy-folders` | `development/lazy_folders.py` | Alias for `lazy-folders`. |
 
 ### AI
 
@@ -133,6 +136,18 @@ Copy reusable GitHub Actions workflows into the current project:
 dev-lazy-gh
 ```
 
+Initialize the default lazy folder portfolio at `~/lazy-dot-folders`:
+
+```sh
+lazy-folders init
+```
+
+Use a custom lazy folder portfolio path:
+
+```sh
+lazy-folders init ~/lazy-folders-portfolio
+```
+
 Start Codex in an `sbx` sandbox for the current project:
 
 ```sh
@@ -177,6 +192,13 @@ ai-ralph-opencode 5
 - `.github/workflows/ci.yml`
 - `.github/workflows/publish-pypi.yml`
 
+`lazy-folders init` creates the configured central portfolio directory and writes:
+
+- default portfolio: `~/lazy-dot-folders`
+- custom portfolio: the path passed to `lazy-folders init <portfolio-path>`
+- config file: `$XDG_CONFIG_HOME/lazy-folders/config.yml`, or `~/.config/lazy-folders/config.yml` when `XDG_CONFIG_HOME` is unset
+- config field: `portfolio_path`
+
 ## Safety Notes
 
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
@@ -188,6 +210,8 @@ ai-ralph-opencode 5
 - `--go-cache` also runs `go clean -cache -testcache`; it is intentionally separate from the default cleanup because it affects Go caches outside the project directory.
 - `dev-lazy-gh` copies workflow files into the current project and rewrites `<pypi_project>` in `publish-pypi.yml` using the current directory name.
 - `ai-ralph-codex` and `ai-ralph-opencode` expect matching `sbx` sandboxes for the current project name.
+- `lazy-folders init` is safe to run repeatedly. It creates the portfolio directory if needed and updates only the lazy-folders YAML config file.
+- Future `lazy-folders` sync commands are intended to preserve destination-only files and keep local target folders ignored with a top-level `.gitignore` containing `*`.
 
 ## Notes for AI Agents
 
