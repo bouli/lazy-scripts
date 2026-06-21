@@ -324,7 +324,30 @@ def ensure_local_target_gitignore(target_path: Path, *, yes: bool = False) -> No
         f"Create {gitignore} containing '*' so the local folder stays ignored?",
         yes=yes,
     ):
+        target_path.mkdir(parents=True, exist_ok=True)
         gitignore.write_text(LOCAL_GITIGNORE_CONTENT, encoding="utf-8")
+
+
+def ensure_local_target_gitignores(target_paths: list[Path], *, yes: bool = False) -> None:
+    missing = [target_path for target_path in target_paths if not (target_path / ".gitignore").exists()]
+    if not missing:
+        return
+
+    if len(missing) == 1:
+        ensure_local_target_gitignore(missing[0], yes=yes)
+        return
+
+    formatted = ", ".join(str(target_path) for target_path in missing)
+    if confirm(
+        f"Create .gitignore containing '*' in these local folders: {formatted}?",
+        yes=yes,
+    ):
+        for target_path in missing:
+            target_path.mkdir(parents=True, exist_ok=True)
+            (target_path / ".gitignore").write_text(
+                LOCAL_GITIGNORE_CONTENT,
+                encoding="utf-8",
+            )
 
 
 def excluded_from_copy(path: Path, relative_path: Path) -> bool:
@@ -542,6 +565,74 @@ def add_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def pull_command(args: argparse.Namespace) -> int:
+    portfolio_path = configured_portfolio_path()
+    identity = resolve_project_identity()
+    source_project_folder = args.use_template or identity.project_folder
+    source_project_path = portfolio_path / source_project_folder
+
+    if not source_project_path.is_dir():
+        raise RuntimeError(f"Portfolio project does not exist: {source_project_folder}")
+
+    if args.use_template:
+        print(f"Template project folder: {source_project_folder}")
+    else:
+        print(f"Project folder: {identity.project_folder}")
+
+    if args.target_folder:
+        source_targets = [source_project_path / args.target_folder]
+        if not source_targets[0].is_dir():
+            raise RuntimeError(
+                f"Portfolio target folder does not exist: "
+                f"{source_project_folder}/{args.target_folder}"
+            )
+    else:
+        source_targets = visible_portfolio_target_dirs(source_project_path)
+        if not source_targets:
+            print(f"No saved target folders for project: {source_project_folder}")
+            return 0
+
+    destination_targets = [
+        identity.project_root / source_target.name for source_target in source_targets
+    ]
+    ensure_local_target_gitignores(destination_targets, yes=args.yes)
+
+    total_existing_files = 0
+    for source_target, destination_target in zip(source_targets, destination_targets):
+        _, existing_files = summarize_pending_copy(source_target, destination_target)
+        total_existing_files += existing_files
+
+    if args.overwrite and total_existing_files and not args.yes:
+        if not confirm(
+            f"Replace {total_existing_files} same-path file(s) in local target folder(s)?",
+            yes=args.yes,
+        ):
+            raise RuntimeError("Refusing to replace existing local files.")
+
+    total = CopySummary(copied=0, skipped=0, replaced=0)
+    for source_target, destination_target in zip(source_targets, destination_targets):
+        summary = copy_merge(source_target, destination_target, overwrite=args.overwrite)
+        total = CopySummary(
+            copied=total.copied + summary.copied,
+            skipped=total.skipped + summary.skipped,
+            replaced=total.replaced + summary.replaced,
+        )
+        print(
+            f"{source_target.name}: "
+            f"copied={summary.copied} "
+            f"skipped={summary.skipped} "
+            f"replaced={summary.replaced}"
+        )
+
+    print(
+        "Summary: "
+        f"copied={total.copied} "
+        f"skipped={total.skipped} "
+        f"replaced={total.replaced}"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=APP_NAME,
@@ -576,6 +667,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Accept prompts for non-interactive use.",
     )
     add_parser.set_defaults(func=add_command)
+
+    pull_parser = subparsers.add_parser(
+        "pull",
+        help="Copy saved target folders from the portfolio into the current project.",
+    )
+    pull_parser.add_argument(
+        "target_folder",
+        nargs="?",
+        help="Saved target folder to restore. Defaults to all saved folders.",
+    )
+    pull_parser.add_argument(
+        "--use-template",
+        help="Portfolio project folder to use as the pull source.",
+    )
+    pull_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace same-path local files after confirmation.",
+    )
+    pull_parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Accept prompts for non-interactive use.",
+    )
+    pull_parser.set_defaults(func=pull_command)
 
     list_parser = subparsers.add_parser(
         "list",
