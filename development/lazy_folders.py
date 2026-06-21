@@ -387,6 +387,80 @@ def preview_existing_target(path: Path) -> None:
         print(f"  ... {len(entries) - 40} more")
 
 
+def visible_portfolio_target_dirs(project_path: Path) -> list[Path]:
+    return sorted(
+        entry
+        for entry in project_path.iterdir()
+        if entry.is_dir() and entry.name not in {".git", METADATA_FILE}
+    )
+
+
+def print_tree_fallback(root: Path) -> None:
+    print(root)
+    entries = sorted(root.rglob("*"), key=lambda path: path.relative_to(root).parts)
+    visible_entries = [
+        entry
+        for entry in entries
+        if ".git" not in entry.relative_to(root).parts
+        and entry.relative_to(root) != Path(METADATA_FILE)
+    ]
+
+    for index, entry in enumerate(visible_entries):
+        relative = entry.relative_to(root)
+        connector = "`--" if index == len(visible_entries) - 1 else "|--"
+        indent = "    " * (len(relative.parts) - 1)
+        suffix = "/" if entry.is_dir() else ""
+        print(f"{indent}{connector} {entry.name}{suffix}")
+
+
+def print_tree(path: Path) -> None:
+    tree_command = shutil.which("tree")
+    if tree_command:
+        subprocess.run([tree_command, "-a", str(path)], check=True)
+        return
+    print_tree_fallback(path)
+
+
+def list_command(args: argparse.Namespace) -> int:
+    portfolio_path = configured_portfolio_path()
+    project_folder = args.project or resolve_project_identity().project_folder
+    project_path = portfolio_path / project_folder
+
+    if not project_path.is_dir():
+        raise RuntimeError(f"Portfolio project does not exist: {project_folder}")
+
+    if args.folder:
+        target_path = project_path / args.folder
+        if not target_path.is_dir():
+            raise RuntimeError(
+                f"Portfolio target folder does not exist: {project_folder}/{args.folder}"
+            )
+        print_tree(target_path)
+        return 0
+
+    folders = visible_portfolio_target_dirs(project_path)
+    if not folders:
+        print(f"No saved target folders for project: {project_folder}")
+        return 0
+
+    for folder in folders:
+        print(folder.name)
+    return 0
+
+
+def projects_command(args: argparse.Namespace) -> int:
+    portfolio_path = configured_portfolio_path()
+    projects = sorted(entry for entry in portfolio_path.iterdir() if entry.is_dir())
+
+    if not projects:
+        print(f"No portfolio projects found in: {portfolio_path}")
+        return 0
+
+    for project in projects:
+        print(project.name)
+    return 0
+
+
 def copy_merge(source: Path, destination: Path, *, overwrite: bool = False) -> CopySummary:
     copied = 0
     skipped = 0
@@ -502,6 +576,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="Accept prompts for non-interactive use.",
     )
     add_parser.set_defaults(func=add_command)
+
+    list_parser = subparsers.add_parser(
+        "list",
+        help="List saved target folders for a portfolio project.",
+    )
+    list_parser.add_argument(
+        "--project",
+        help="Portfolio project folder to inspect. Defaults to the current project.",
+    )
+    list_parser.add_argument(
+        "--folder",
+        help="Saved target folder to show in tree mode.",
+    )
+    list_parser.set_defaults(func=list_command)
+
+    projects_parser = subparsers.add_parser(
+        "projects",
+        help="List known portfolio project folders.",
+    )
+    projects_parser.set_defaults(func=projects_command)
 
     return parser
 

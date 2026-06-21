@@ -77,7 +77,7 @@ make clean
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
 | `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
 | `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
-| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init` and `add`. |
+| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init`, `add`, `list`, and `projects`. |
 | `dev-lazy-folders` | `development/lazy_folders.py` | Alias for `lazy-folders`. |
 
 ### AI
@@ -160,6 +160,30 @@ Run the same add operation without prompts, replacing same-path portfolio files:
 lazy-folders add .notes --overwrite --yes
 ```
 
+List saved folders for the current project:
+
+```sh
+lazy-folders list
+```
+
+List saved folders for a named portfolio project:
+
+```sh
+lazy-folders list --project app
+```
+
+Inspect one saved folder with tree-style nested output:
+
+```sh
+lazy-folders list --project app --folder .notes
+```
+
+List known portfolio projects:
+
+```sh
+lazy-folders projects
+```
+
 Start Codex in an `sbx` sandbox for the current project:
 
 ```sh
@@ -217,6 +241,14 @@ ai-ralph-opencode 5
 - internal metadata: `<portfolio>/<resolved-project-folder>/.lazy-folders.yml`
 - saved target folder: `<portfolio>/<resolved-project-folder>/<target-folder>/`
 - local ignore file when accepted or `--yes` is used: `<target-folder>/.gitignore` containing `*`
+
+`lazy-folders list` reads from:
+
+- current project listing: `<portfolio>/<resolved-project-folder>/`
+- explicit project listing: `<portfolio>/<project-folder>/`
+- tree view: `<portfolio>/<project-folder>/<target-folder>/`
+
+Normal listing hides internal metadata such as `.lazy-folders.yml`.
 
 ## Safety Notes
 
