@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -633,6 +633,95 @@ def pull_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def push_command(args: argparse.Namespace) -> int:
+    portfolio_path = configured_portfolio_path()
+    identity = resolve_project_identity()
+    destination_project_folder = args.to_project or identity.project_folder
+    destination_identity = replace(identity, project_folder=destination_project_folder)
+    project_path = portfolio_path / destination_project_folder
+
+    print(f"Project folder: {destination_project_folder}")
+
+    if args.target_folder:
+        target_names = [args.target_folder]
+    else:
+        if not project_path.is_dir():
+            raise RuntimeError(
+                f"Portfolio project does not exist for no-argument push: "
+                f"{destination_project_folder}"
+            )
+        target_names = [
+            target_path.name
+            for target_path in visible_portfolio_target_dirs(project_path)
+            if (identity.project_root / target_path.name).is_dir()
+        ]
+        if not target_names:
+            print(
+                f"No portfolio-known target folders also exist locally for project: "
+                f"{destination_project_folder}"
+            )
+            return 0
+
+    source_targets = [identity.project_root / target_name for target_name in target_names]
+    for target_name, source_target in zip(target_names, source_targets):
+        if not source_target.is_dir():
+            raise RuntimeError(f"Local target folder does not exist: {source_target}")
+        warn_non_dot_target(target_name)
+
+    metadata_path = ensure_portfolio_project_metadata(
+        portfolio_path,
+        destination_identity,
+        yes=args.yes,
+        explicit_destination=bool(args.to_project),
+    )
+    project_path = metadata_path.parent
+    destination_targets = [project_path / target_name for target_name in target_names]
+
+    existing_targets = [target for target in destination_targets if target.exists()]
+    if existing_targets and not args.yes:
+        for existing_target in existing_targets:
+            preview_existing_target(existing_target)
+        if not confirm("Write into the existing portfolio target folder(s)?", yes=args.yes):
+            raise RuntimeError("Refusing to write into existing portfolio target folder(s).")
+
+    total_existing_files = 0
+    for source_target, destination_target in zip(source_targets, destination_targets):
+        _, existing_files = summarize_pending_copy(source_target, destination_target)
+        total_existing_files += existing_files
+
+    if args.overwrite and total_existing_files and not args.yes:
+        if not confirm(
+            f"Replace {total_existing_files} same-path file(s) in the portfolio target(s)?",
+            yes=args.yes,
+        ):
+            raise RuntimeError("Refusing to replace existing portfolio files.")
+
+    total = CopySummary(copied=0, skipped=0, replaced=0)
+    for target_name, source_target, destination_target in zip(
+        target_names, source_targets, destination_targets
+    ):
+        summary = copy_merge(source_target, destination_target, overwrite=args.overwrite)
+        total = CopySummary(
+            copied=total.copied + summary.copied,
+            skipped=total.skipped + summary.skipped,
+            replaced=total.replaced + summary.replaced,
+        )
+        print(
+            f"{target_name}: "
+            f"copied={summary.copied} "
+            f"skipped={summary.skipped} "
+            f"replaced={summary.replaced}"
+        )
+
+    print(
+        "Summary: "
+        f"copied={total.copied} "
+        f"skipped={total.skipped} "
+        f"replaced={total.replaced}"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=APP_NAME,
@@ -692,6 +781,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Accept prompts for non-interactive use.",
     )
     pull_parser.set_defaults(func=pull_command)
+
+    push_parser = subparsers.add_parser(
+        "push",
+        help="Copy local target folders back into the portfolio.",
+    )
+    push_parser.add_argument(
+        "target_folder",
+        nargs="?",
+        help="Project-local target folder to push. Defaults to matching saved folders.",
+    )
+    push_parser.add_argument(
+        "--to-project",
+        help="Portfolio project folder to write to. Defaults to the current project.",
+    )
+    push_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace same-path portfolio files after confirmation.",
+    )
+    push_parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Accept prompts for non-interactive use.",
+    )
+    push_parser.set_defaults(func=push_command)
 
     list_parser = subparsers.add_parser(
         "list",

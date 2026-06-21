@@ -77,7 +77,7 @@ make clean
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
 | `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
 | `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
-| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init`, `add`, `pull`, `list`, and `projects`. |
+| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init`, `add`, `pull`, `push`, `list`, and `projects`. |
 | `dev-lazy-folders` | `development/lazy_folders.py` | Alias for `lazy-folders`. |
 
 ### AI
@@ -184,6 +184,30 @@ Replace same-path local files while pulling:
 lazy-folders pull .notes --overwrite --yes
 ```
 
+Push one local lazy folder back to the current project's portfolio entry:
+
+```sh
+lazy-folders push .notes
+```
+
+Push all saved folders that also exist locally:
+
+```sh
+lazy-folders push
+```
+
+Push a local folder into a named portfolio project:
+
+```sh
+lazy-folders push .notes --to-project template-python --yes
+```
+
+Replace same-path portfolio files while pushing:
+
+```sh
+lazy-folders push .notes --overwrite --yes
+```
+
 List saved folders for the current project:
 
 ```sh
@@ -282,6 +306,13 @@ Normal listing hides internal metadata such as `.lazy-folders.yml`.
 - local restore destination: `<current-project>/<target-folder>/`
 - local ignore file when accepted or `--yes` is used: `<target-folder>/.gitignore` containing `*`
 
+`lazy-folders push [target-folder]` writes to:
+
+- current project destination: `<portfolio>/<resolved-project-folder>/`
+- explicit destination: `<portfolio>/<project-folder>/` when `--to-project <project-folder>` is provided
+- saved target folder destination: `<portfolio>/<project-folder>/<target-folder>/`
+- internal metadata: `<portfolio>/<project-folder>/.lazy-folders.yml`
+
 ## Safety Notes
 
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
@@ -302,6 +333,10 @@ Normal listing hides internal metadata such as `.lazy-folders.yml`.
 - `lazy-folders pull --overwrite` prompts before replacing same-path local files unless `--yes` is also provided.
 - `lazy-folders pull` does not copy saved top-level `.gitignore` files, any `.git` directory, or internal `.lazy-folders.yml` metadata into local project content.
 - `lazy-folders pull --use-template <project-folder>` reads from the named portfolio project without creating metadata for the current project.
+- `lazy-folders push` preserves destination-only portfolio files. Existing same-path files are skipped by default and replaced only with `--overwrite`.
+- `lazy-folders push --overwrite` prompts before replacing same-path portfolio files unless `--yes` is also provided.
+- `lazy-folders push` does not copy the target folder's top-level `.gitignore`, any `.git` directory, or internal `.lazy-folders.yml` metadata into saved content.
+- `lazy-folders push --to-project <project-folder>` writes to the named portfolio project and applies that destination before selecting folders for a no-argument push.
 
 ## Notes for AI Agents
 
