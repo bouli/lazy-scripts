@@ -5,6 +5,7 @@ import datetime as dt
 import hashlib
 import os
 import re
+import shutil
 import subprocess
 import sys
 import unicodedata
@@ -17,6 +18,7 @@ APP_NAME = "lazy-folders"
 DEFAULT_PORTFOLIO = "~/lazy-dot-folders"
 METADATA_FILE = ".lazy-folders.yml"
 METADATA_VERSION = "1"
+LOCAL_GITIGNORE_CONTENT = "*\n"
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,13 @@ class ProjectIdentity:
     remote_url: str | None = None
     normalized_remote_identity: str | None = None
     repo_name: str | None = None
+
+
+@dataclass(frozen=True)
+class CopySummary:
+    copied: int
+    skipped: int
+    replaced: int
 
 
 def config_path() -> Path:
@@ -85,6 +94,19 @@ def write_config(portfolio_path: Path) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def configured_portfolio_path() -> Path:
+    path = config_path()
+    values = read_simple_yaml(path)
+    configured = values.get("portfolio_path")
+    if not configured:
+        raise RuntimeError(
+            f"Config is missing portfolio_path. Run {APP_NAME} init first."
+        )
+    portfolio_path = normalize_path(configured)
+    portfolio_path.mkdir(parents=True, exist_ok=True)
+    return portfolio_path
 
 
 def git_output(cwd: Path, *args: str) -> str | None:
@@ -281,6 +303,115 @@ def ensure_portfolio_project_metadata(
     return metadata_path
 
 
+def project_target_path(identity: ProjectIdentity, target_folder: str) -> Path:
+    return identity.project_root / target_folder
+
+
+def warn_non_dot_target(target_folder: str) -> None:
+    if not Path(target_folder).name.startswith("."):
+        print(
+            f"Warning: target folder {target_folder!r} is not a dot-folder.",
+            file=sys.stderr,
+        )
+
+
+def ensure_local_target_gitignore(target_path: Path, *, yes: bool = False) -> None:
+    gitignore = target_path / ".gitignore"
+    if gitignore.exists():
+        return
+
+    if confirm(
+        f"Create {gitignore} containing '*' so the local folder stays ignored?",
+        yes=yes,
+    ):
+        gitignore.write_text(LOCAL_GITIGNORE_CONTENT, encoding="utf-8")
+
+
+def excluded_from_copy(path: Path, relative_path: Path) -> bool:
+    parts = relative_path.parts
+    if ".git" in parts:
+        return True
+    if relative_path == Path(".gitignore"):
+        return True
+    if relative_path == Path(METADATA_FILE):
+        return True
+    return False
+
+
+def iter_copy_files(source: Path) -> list[Path]:
+    files: list[Path] = []
+    for root, dirnames, filenames in os.walk(source):
+        root_path = Path(root)
+        dirnames[:] = [
+            dirname
+            for dirname in dirnames
+            if not excluded_from_copy(root_path / dirname, (root_path / dirname).relative_to(source))
+        ]
+        for filename in filenames:
+            path = root_path / filename
+            relative_path = path.relative_to(source)
+            if excluded_from_copy(path, relative_path):
+                continue
+            files.append(relative_path)
+    return sorted(files)
+
+
+def summarize_pending_copy(source: Path, destination: Path) -> tuple[int, int]:
+    new_files = 0
+    existing_files = 0
+    for relative_path in iter_copy_files(source):
+        if (destination / relative_path).exists():
+            existing_files += 1
+        else:
+            new_files += 1
+    return new_files, existing_files
+
+
+def preview_existing_target(path: Path) -> None:
+    print(f"Existing portfolio target: {path}")
+    if not path.exists():
+        return
+
+    entries = sorted(
+        entry.relative_to(path)
+        for entry in path.rglob("*")
+        if entry.name != METADATA_FILE and ".git" not in entry.relative_to(path).parts
+    )
+    if not entries:
+        print("  (empty)")
+        return
+    for entry in entries[:40]:
+        suffix = "/" if (path / entry).is_dir() else ""
+        print(f"  {entry}{suffix}")
+    if len(entries) > 40:
+        print(f"  ... {len(entries) - 40} more")
+
+
+def copy_merge(source: Path, destination: Path, *, overwrite: bool = False) -> CopySummary:
+    copied = 0
+    skipped = 0
+    replaced = 0
+    destination.mkdir(parents=True, exist_ok=True)
+
+    for relative_path in iter_copy_files(source):
+        source_file = source / relative_path
+        destination_file = destination / relative_path
+        destination_file.parent.mkdir(parents=True, exist_ok=True)
+
+        if destination_file.exists():
+            if overwrite:
+                shutil.copy2(source_file, destination_file)
+                replaced += 1
+            else:
+                skipped += 1
+            continue
+
+        shutil.copy2(source_file, destination_file)
+        copied += 1
+
+    return CopySummary(copied=copied, skipped=skipped, replaced=replaced)
+
+
 def init_command(args: argparse.Namespace) -> int:
     portfolio_path = normalize_path(args.portfolio_path or DEFAULT_PORTFOLIO)
     portfolio_path.mkdir(parents=True, exist_ok=True)
@@ -288,6 +419,52 @@ def init_command(args: argparse.Namespace) -> int:
 
     print(f"Portfolio path: {portfolio_path}")
     print(f"Config path: {written_config}")
+    return 0
+
+
+def add_command(args: argparse.Namespace) -> int:
+    portfolio_path = configured_portfolio_path()
+    identity = resolve_project_identity()
+    target_folder = args.target_folder
+    source_path = project_target_path(identity, target_folder)
+
+    if not source_path.is_dir():
+        raise RuntimeError(f"Local target folder does not exist: {source_path}")
+
+    warn_non_dot_target(target_folder)
+    print(f"Project folder: {identity.project_folder}")
+    ensure_local_target_gitignore(source_path, yes=args.yes)
+
+    metadata_path = ensure_portfolio_project_metadata(
+        portfolio_path,
+        identity,
+        yes=args.yes,
+    )
+    project_path = metadata_path.parent
+    destination_path = project_path / target_folder
+
+    if destination_path.exists() and not args.yes:
+        preview_existing_target(destination_path)
+        if not confirm("Write into the existing portfolio target folder?", yes=args.yes):
+            raise RuntimeError("Refusing to write into existing portfolio target folder.")
+
+    new_files, existing_files = summarize_pending_copy(source_path, destination_path)
+    if args.overwrite and existing_files and not args.yes:
+        if not confirm(
+            f"Replace {existing_files} same-path file(s) in the portfolio target?",
+            yes=args.yes,
+        ):
+            raise RuntimeError("Refusing to replace existing portfolio files.")
+
+    summary = copy_merge(source_path, destination_path, overwrite=args.overwrite)
+    print(
+        "Summary: "
+        f"copied={summary.copied} "
+        f"skipped={summary.skipped} "
+        f"replaced={summary.replaced}"
+    )
+    if new_files == 0 and existing_files == 0:
+        print("No copyable files found.")
     return 0
 
 
@@ -309,13 +486,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init_parser.set_defaults(func=init_command)
 
+    add_parser = subparsers.add_parser(
+        "add",
+        help="Copy a project-local target folder into the portfolio.",
+    )
+    add_parser.add_argument("target_folder", help="Project-local folder to add.")
+    add_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace same-path files in the portfolio after confirmation.",
+    )
+    add_parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Accept prompts for non-interactive use.",
+    )
+    add_parser.set_defaults(func=add_command)
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

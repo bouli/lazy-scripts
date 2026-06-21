@@ -77,7 +77,7 @@ make clean
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
 | `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
 | `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
-| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Initial support includes `init`. |
+| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init` and `add`. |
 | `dev-lazy-folders` | `development/lazy_folders.py` | Alias for `lazy-folders`. |
 
 ### AI
@@ -148,6 +148,18 @@ Use a custom lazy folder portfolio path:
 lazy-folders init ~/lazy-folders-portfolio
 ```
 
+Add a project-local lazy folder to the configured portfolio:
+
+```sh
+lazy-folders add .notes
+```
+
+Run the same add operation without prompts, replacing same-path portfolio files:
+
+```sh
+lazy-folders add .notes --overwrite --yes
+```
+
 Start Codex in an `sbx` sandbox for the current project:
 
 ```sh
@@ -199,6 +211,13 @@ ai-ralph-opencode 5
 - config file: `$XDG_CONFIG_HOME/lazy-folders/config.yml`, or `~/.config/lazy-folders/config.yml` when `XDG_CONFIG_HOME` is unset
 - config field: `portfolio_path`
 
+`lazy-folders add <target-folder>` writes to:
+
+- portfolio project folder: `<portfolio>/<resolved-project-folder>/`
+- internal metadata: `<portfolio>/<resolved-project-folder>/.lazy-folders.yml`
+- saved target folder: `<portfolio>/<resolved-project-folder>/<target-folder>/`
+- local ignore file when accepted or `--yes` is used: `<target-folder>/.gitignore` containing `*`
+
 ## Safety Notes
 
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
@@ -211,7 +230,10 @@ ai-ralph-opencode 5
 - `dev-lazy-gh` copies workflow files into the current project and rewrites `<pypi_project>` in `publish-pypi.yml` using the current directory name.
 - `ai-ralph-codex` and `ai-ralph-opencode` expect matching `sbx` sandboxes for the current project name.
 - `lazy-folders init` is safe to run repeatedly. It creates the portfolio directory if needed and updates only the lazy-folders YAML config file.
-- Future `lazy-folders` sync commands are intended to preserve destination-only files and keep local target folders ignored with a top-level `.gitignore` containing `*`.
+- `lazy-folders add` preserves destination-only portfolio files. Existing same-path files are skipped by default and replaced only with `--overwrite`.
+- `lazy-folders add --overwrite` prompts before replacing same-path files unless `--yes` is also provided.
+- `lazy-folders add` does not copy the target folder's top-level `.gitignore`, any `.git` directory, or internal `.lazy-folders.yml` metadata into saved content.
+- `lazy-folders add` can create a missing local target-folder `.gitignore` containing `*`; `--yes` accepts that prompt automatically.
 
 ## Notes for AI Agents
 
