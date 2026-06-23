@@ -14,8 +14,6 @@ clean:
 
 	sudo rm -f /usr/local/bin/dev-push-loop
 	sudo rm -f /usr/local/bin/dev-lazy-gh
-	sudo rm -f /usr/local/bin/lazy-folders
-	sudo rm -f /usr/local/bin/dev-lazy-folders
 
 	zsh
 
@@ -34,10 +32,6 @@ create:
 
 	sudo ln -s $(PWD)/development/gh_lazy_init.sh /usr/local/bin/dev-lazy-gh
 	chmod +x $(PWD)/development/gh_lazy_init.sh
-
-	sudo ln -s $(PWD)/development/lazy_folders.py /usr/local/bin/lazy-folders
-	sudo ln -s $(PWD)/development/lazy_folders.py /usr/local/bin/dev-lazy-folders
-	chmod +x $(PWD)/development/lazy_folders.py
 
 #AI
 	sudo ln -s $(PWD)/ai/sbx_opencode_ralph.sh /usr/local/bin/ai-ralph-opencode
