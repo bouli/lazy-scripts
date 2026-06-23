@@ -1,4 +1,4 @@
-# Bouli Lazy Scripts v0.5.1
+# Bouli Lazy Scripts v0.6.0
 
 Personal command-line scripts for development and AI sandbox workflows.
 
