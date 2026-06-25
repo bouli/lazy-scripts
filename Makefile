@@ -8,6 +8,7 @@ clean:
 
 	sudo rm -f /usr/local/bin/ai-ralph-opencode | True
 	sudo rm -f /usr/local/bin/ai-ralph-codex | True
+	sudo rm -f /usr/local/bin/ai-ralph-claude | True
 	sudo rm -f /usr/local/bin/ai-sbx-opencode | True
 	sudo rm -f /usr/local/bin/ai-sbx-codex | True
 	sudo rm -f /usr/local/bin/ai-sbx-claude | True
@@ -37,6 +38,9 @@ create:
 #AI
 	sudo ln -s $(PWD)/ai/sbx_opencode_ralph.sh /usr/local/bin/ai-ralph-opencode | True
 	chmod +x $(PWD)/ai/sbx_opencode_ralph.sh
+
+	sudo ln -s $(PWD)/ai/sbx_claude_ralph.sh /usr/local/bin/ai-ralph-claude | True
+	chmod +x $(PWD)/ai/sbx_claude_ralph.sh
 
 	sudo ln -s $(PWD)/ai/sbx_codex_ralph.sh /usr/local/bin/ai-ralph-codex | True
 	chmod +x $(PWD)/ai/sbx_codex_ralph.sh
