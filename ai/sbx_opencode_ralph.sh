@@ -6,6 +6,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+mv ./.claude ./.agents | True
+
 project_name="${PWD##*/}"
 project_name="${project_name//[^[:alnum:]-]/-}"
 sandbox_name="opencode-${project_name}"

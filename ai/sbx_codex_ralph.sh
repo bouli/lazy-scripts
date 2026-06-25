@@ -6,6 +6,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+mv ./.claude ./.agents | True
+
 if [ -z "$2" ]; then
   sleeping_time=0
 else

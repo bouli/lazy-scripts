@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mv ./.agents ./.claude | True
+
 project_name="${PWD##*/}"
 project_name="${project_name//[^[:alnum:]-]/-}"
 sandbox_name="claude-${project_name}"

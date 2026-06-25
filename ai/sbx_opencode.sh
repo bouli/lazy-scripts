@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+mv ./.agents ./.claude | True
+
 project_name="${PWD##*/}"
 project_name="${project_name//[^[:alnum:]-]/-}"
 sandbox_name="opencode-${project_name}"
