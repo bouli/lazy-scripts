@@ -1,69 +1,69 @@
 # Bouli Lazy Scripts v0.8.0
 
-Personal command-line scripts for development and AI sandbox workflows.
+Personal command-line scripts for development automation and AI sandbox workflows.
 
-This repository is intended to be installed by creating symlinks from the scripts in this repo into `/usr/local/bin`. After installation, the commands can be run from any shell.
+The repository is installed by symlinking selected scripts into `/usr/local/bin`.
+After installation, those commands can be run from any shell.
 
 ## Repository Layout
 
 ```text
 .
 ├── Makefile                         # Installs/removes command symlinks
-├── ai/                              # AI sandbox helper scripts
+├── ai/                              # AI sandbox and agent bootstrap scripts
 │   ├── ai_lazy_init.sh
-│   ├── sbx_cline.sh
+│   ├── lazy-ai-config/              # Files copied by ai-lazy-init
+│   ├── sbx_claude.sh
+│   ├── sbx_claude_ralph.sh
+│   ├── sbx_cline.sh                 # Draft, not installed
 │   ├── sbx_codex.sh
 │   ├── sbx_codex_ralph.sh
 │   ├── sbx_opencode.sh
-│   ├── sbx_opencode_ralph.sh
-│   └── lazy-ai-config/
-│       ├── .agents/
-│       └── .opencode/opencode.json
+│   └── sbx_opencode_ralph.sh
 ├── development/                     # General development utilities
 │   ├── clean_garbage_collector.sh
 │   ├── gh_lazy_init.sh
-│   ├── lazy_folders.py
-│   ├── lazy-gh-workflow/
+│   ├── lazy-gh-workflow/            # Files copied by dev-lazy-gh
 │   ├── push_loop.sh
 │   └── sandbox_launcher.sh
+└── tests/                           # Shell tests for cleanup and legacy lazy-folders behavior
 ```
 
 ## Requirements
 
-The scripts are written for a Unix-like environment and currently assume macOS in several places.
-
-Required for installation:
+Installation requires:
 
 - `make`
 - `sudo`
 - write access to `/usr/local/bin`
 - `bash`, `sh`, and `zsh`
 
-Optional runtime tools, depending on which scripts you use:
+Runtime requirements depend on the command:
 
 - `sbx` for AI sandbox commands
-- `uv` and `uvx`
-- `code` command from Visual Studio Code
-- `git`
-- local Ollama server on `localhost:11434` for the OpenCode sandbox config
+- `uv` and `code` for `bouli-sandbox` / `dev-sandbox`
+- `git` for `dev-push-loop` and project workflows
+- local Ollama on `localhost:11434` for the OpenCode sandbox config
+- macOS-style `sed -i ''` for `dev-lazy-gh`
 
-## Install Commands
+Some scripts use `readlink -f`, which may require GNU coreutils on macOS.
 
-From the repository root:
+## Installation
+
+Create command symlinks:
 
 ```sh
 make create
 ```
 
-This creates symlinks in `/usr/local/bin` and marks the source scripts executable.
-
-To remove the installed symlinks:
+Remove command symlinks:
 
 ```sh
 make clean
 ```
 
-`make clean` only removes the command symlinks listed in the Makefile. It does not delete this repository or files copied into other projects.
+Both targets modify `/usr/local/bin` with `sudo`. They only manage the symlinks
+listed in the Makefile.
 
 ## Installed Commands
 
@@ -71,26 +71,27 @@ make clean
 
 | Command | Source | Purpose |
 | --- | --- | --- |
-| `bouli-sandbox` | `development/sandbox_launcher.sh` | Recreates `~/sandbox` with `uv`, runs `uv sync`, and opens it in VS Code. |
+| `bouli-sandbox` | `development/sandbox_launcher.sh` | Deletes and recreates `~/sandbox` with `uv`, then opens it in VS Code. |
 | `dev-sandbox` | `development/sandbox_launcher.sh` | Alias for `bouli-sandbox`. |
-| `bouli-garbage-collector` | `development/clean_garbage_collector.sh` | Cleans supported project-local Python, JavaScript, and Go artifacts after listing the matched targets. |
+| `bouli-garbage-collector` | `development/clean_garbage_collector.sh` | Removes supported project-local Python, JavaScript, and Go generated artifacts. |
 | `dev-garbage-collector` | `development/clean_garbage_collector.sh` | Alias for `bouli-garbage-collector`. |
-| `dev-push-loop` | `development/push_loop.sh` | Pushes `main` to `origin` every 60 seconds forever. |
-| `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project and fills the PyPI project name from the current directory. |
-| `lazy-folders` | `development/lazy_folders.py` | Manages a central portfolio for project-local lazy folders. Supports `init`, `add`, `pull`, `push`, `list`, and `projects`. |
-| `dev-lazy-folders` | `development/lazy_folders.py` | Alias for `lazy-folders`. |
+| `dev-push-loop` | `development/push_loop.sh` | Runs `git push origin main` every 60 seconds until interrupted. |
+| `dev-lazy-gh` | `development/gh_lazy_init.sh` | Copies reusable GitHub Actions workflows into the current project. |
 
 ### AI
 
 | Command | Source | Purpose |
 | --- | --- | --- |
-| `ai-sbx-codex` | `ai/sbx_codex.sh` | Ensures an `openai` secret exists in `sbx`, creates a Codex sandbox named from the current directory, then runs it. |
-| `ai-sbx-opencode` | `ai/sbx_opencode.sh` | Recreates and runs an OpenCode sandbox named from the current directory, with access to local Ollama. |
-| `ai-lazy-init` | `ai/ai_lazy_init.sh` | Copies `ai/lazy-ai-config/` into the current directory, including `.agents/` skills and `.opencode/opencode.json`. |
-| `ai-ralph-codex <iterations> [sleep_seconds]` | `ai/sbx_codex_ralph.sh` | Runs the Ralph Codex skill inside the current project's Codex sandbox repeatedly, optionally sleeping between runs. |
-| `ai-ralph-opencode <iterations>` | `ai/sbx_opencode_ralph.sh` | Runs the Ralph OpenCode command inside the current project's OpenCode sandbox repeatedly. |
+| `ai-sbx-codex` | `ai/sbx_codex.sh` | Ensures an OpenAI `sbx` secret exists, creates a Codex sandbox for the current directory, then runs it. |
+| `ai-sbx-claude` | `ai/sbx_claude.sh` | Ensures an Anthropic `sbx` secret exists, creates a Claude sandbox for the current directory, then runs it. |
+| `ai-sbx-opencode` | `ai/sbx_opencode.sh` | Recreates an OpenCode sandbox for the current directory and allows access to local Ollama. |
+| `ai-lazy-init` | `ai/ai_lazy_init.sh` | Copies the shared `.agents/` and `.opencode/` config into the current directory. |
+| `ai-ralph-codex <iterations> [sleep_seconds]` | `ai/sbx_codex_ralph.sh` | Runs the Ralph Codex skill repeatedly in the current project's Codex sandbox. |
+| `ai-ralph-claude <iterations> [sleep_seconds]` | `ai/sbx_claude_ralph.sh` | Runs the Ralph Claude prompt repeatedly in the current project's Claude sandbox. |
+| `ai-ralph-opencode <iterations>` | `ai/sbx_opencode_ralph.sh` | Runs the Ralph OpenCode command repeatedly in the current project's OpenCode sandbox. |
 
-`ai/sbx_cline.sh` exists in the repository but is not linked by the Makefile. It appears to be a draft Cline sandbox setup script.
+`ai/sbx_cline.sh` is present as a draft script, but `make create` does not
+install it.
 
 ## Common Usage
 
@@ -100,31 +101,25 @@ Create a disposable development sandbox:
 bouli-sandbox
 ```
 
-Preview generated Python, JavaScript, and Go cleanup targets in the current project:
+Preview cleanup targets in the current project:
 
 ```sh
 dev-garbage-collector --dry-run
 ```
 
-Clean generated Python, JavaScript, and Go artifacts in the current project:
+Remove default cleanup targets:
 
 ```sh
 bouli-garbage-collector
 ```
 
-The default cleanup is equivalent to:
-
-```sh
-dev-garbage-collector --all
-```
-
-Run a deeper JavaScript dependency cleanup when you intentionally want to remove `node_modules`:
+Also remove JavaScript dependencies such as `node_modules`:
 
 ```sh
 dev-garbage-collector --dependencies
 ```
 
-Run broader Go cache cleanup when you intentionally want to clear shared Go build and test caches:
+Also clear shared Go build and test caches:
 
 ```sh
 dev-garbage-collector --go-cache
@@ -136,121 +131,15 @@ Copy reusable GitHub Actions workflows into the current project:
 dev-lazy-gh
 ```
 
-Initialize the default lazy folder portfolio at `~/lazy-dot-folders`:
-
-```sh
-lazy-folders init
-```
-
-Use a custom lazy folder portfolio path:
-
-```sh
-lazy-folders init ~/lazy-folders-portfolio
-```
-
-Add a project-local lazy folder to the configured portfolio:
-
-```sh
-lazy-folders add .notes
-```
-
-Run the same add operation without prompts, replacing same-path portfolio files:
-
-```sh
-lazy-folders add .notes --overwrite --yes
-```
-
-Restore all saved lazy folders for the current project:
-
-```sh
-lazy-folders pull
-```
-
-Restore one saved folder:
-
-```sh
-lazy-folders pull .notes
-```
-
-Restore a folder from another portfolio project as a template:
-
-```sh
-lazy-folders pull .agents --use-template other-app --yes
-```
-
-Replace same-path local files while pulling:
-
-```sh
-lazy-folders pull .notes --overwrite --yes
-```
-
-Push one local lazy folder back to the current project's portfolio entry:
-
-```sh
-lazy-folders push .notes
-```
-
-Push all saved folders that also exist locally:
-
-```sh
-lazy-folders push
-```
-
-Push a local folder into a named portfolio project:
-
-```sh
-lazy-folders push .notes --to-project template-python --yes
-```
-
-Push every locally available folder that is already known by a named portfolio project:
-
-```sh
-lazy-folders push --to-project template-python --overwrite --yes
-```
-
-Replace same-path portfolio files while pushing:
-
-```sh
-lazy-folders push .notes --overwrite --yes
-```
-
-List saved folders for the current project:
-
-```sh
-lazy-folders list
-```
-
-List saved folders for a named portfolio project:
-
-```sh
-lazy-folders list --project app
-```
-
-Inspect one saved folder with tree-style nested output:
-
-```sh
-lazy-folders list --project app --folder .notes
-```
-
-List known portfolio projects:
-
-```sh
-lazy-folders projects
-```
-
-Start Codex in an `sbx` sandbox for the current project:
+Start Codex, Claude, or OpenCode in an `sbx` sandbox for the current project:
 
 ```sh
 ai-sbx-codex
-```
-
-Start OpenCode in an `sbx` sandbox for the current project:
-
-```sh
+ai-sbx-claude
 ai-sbx-opencode
 ```
 
-Copy the OpenCode lazy AI config into the current directory:
+Copy the shared AI agent config into the current project:
 
 ```sh
 ai-lazy-init
@@ -262,118 +151,82 @@ Run Ralph with Codex for five iterations, sleeping 30 seconds between runs:
 ai-ralph-codex 5 30
 ```
 
+Run Ralph with Claude for five iterations, sleeping 30 seconds between runs:
+
+```sh
+ai-ralph-claude 5 30
+```
+
 Run Ralph with OpenCode for five iterations:
 
 ```sh
 ai-ralph-opencode 5
 ```
 
-## Generated Files and Paths
+## Generated Files
 
-`ai-lazy-init` copies these paths into the current project:
+`ai-lazy-init` copies `ai/lazy-ai-config/` into the current project. The copied
+content includes:
 
-- `.agents/`
-- `.agents/.gitignore`
+- `.agents/GUIDELINES.md`
+- `.agents/PROGRESS.md`
+- `.agents/settings.json`
+- `.agents/code-standards/conventional-commits-messages.md`
+- `.agents/skills/*/SKILL.md`
 - `.opencode/opencode.json`
-- `.opencode/.gitignore`
 
-`dev-lazy-gh` copies these paths into the current project:
+It also writes:
+
+- `.agents/.gitignore` containing `*`
+- `.opencode/.gitignore` containing `*`
+
+`dev-lazy-gh` copies `development/lazy-gh-workflow/` into the current project.
+The copied content includes:
 
 - `.github/workflows/ci.yml`
 - `.github/workflows/publish-pypi.yml`
 
-`lazy-folders init` creates the configured central portfolio directory and writes:
-
-- default portfolio: `~/lazy-dot-folders`
-- custom portfolio: the path passed to `lazy-folders init <portfolio-path>`
-- config file: `$XDG_CONFIG_HOME/lazy-folders/config.yml`, or `~/.config/lazy-folders/config.yml` when `XDG_CONFIG_HOME` is unset
-- config field: `portfolio_path`
-
-`lazy-folders add <target-folder>` writes to:
-
-- portfolio project folder: `<portfolio>/<resolved-project-folder>/`
-- internal metadata: `<portfolio>/<resolved-project-folder>/.lazy-folders.yml`
-- saved target folder: `<portfolio>/<resolved-project-folder>/<target-folder>/`
-- local ignore file when accepted or `--yes` is used: `<target-folder>/.gitignore` containing `*`
-
-`lazy-folders list` reads from:
-
-- current project listing: `<portfolio>/<resolved-project-folder>/`
-- explicit project listing: `<portfolio>/<project-folder>/`
-- tree view: `<portfolio>/<project-folder>/<target-folder>/`
-
-Normal listing hides internal metadata such as `.lazy-folders.yml`.
-
-`lazy-folders pull [target-folder]` reads from:
-
-- current project source: `<portfolio>/<resolved-project-folder>/`
-- template source: `<portfolio>/<project-folder>/` when `--use-template <project-folder>` is provided
-- saved target folder source: `<portfolio>/<project-folder>/<target-folder>/`
-- local restore destination: `<current-project>/<target-folder>/`
-- local ignore file when accepted or `--yes` is used: `<target-folder>/.gitignore` containing `*`
-
-`lazy-folders push [target-folder]` writes to:
-
-- current project destination: `<portfolio>/<resolved-project-folder>/`
-- explicit destination: `<portfolio>/<project-folder>/` when `--to-project <project-folder>` is provided
-- saved target folder destination: `<portfolio>/<project-folder>/<target-folder>/`
-- internal metadata: `<portfolio>/<project-folder>/.lazy-folders.yml`
+It then replaces `<pypi_project>` in `publish-pypi.yml` with the current
+directory name.
 
 ## Safety Notes
 
-- `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing `~/sandbox` directory before recreating it.
+- `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing sandbox before recreating it.
 - `dev-push-loop` runs forever until interrupted with `Ctrl+C`.
 - `make create` and `make clean` use `sudo` to modify `/usr/local/bin`.
-- `bouli-garbage-collector` and `dev-garbage-collector` refuse to run from `/`, from your home directory, or from a directory without a project marker: `.git`, `pyproject.toml`, `package.json`, or `go.mod`.
-- `bouli-garbage-collector` and `dev-garbage-collector` permanently remove matched project-local Python, JavaScript, and Go artifacts. Use `--dry-run` to preview the same target set without deleting anything.
-- `--dependencies` also removes JavaScript dependencies such as `node_modules`; it is intentionally separate from the default cleanup.
-- `--go-cache` also runs `go clean -cache -testcache`; it is intentionally separate from the default cleanup because it affects Go caches outside the project directory.
-- `dev-lazy-gh` copies workflow files into the current project and rewrites `<pypi_project>` in `publish-pypi.yml` using the current directory name.
-- `ai-ralph-codex` and `ai-ralph-opencode` expect matching `sbx` sandboxes for the current project name.
-- `lazy-folders init` is safe to run repeatedly. It creates the portfolio directory if needed and updates only the lazy-folders YAML config file.
-- `lazy-folders add` preserves destination-only portfolio files. Existing same-path files are skipped by default and replaced only with `--overwrite`.
-- `lazy-folders add --overwrite` prompts before replacing same-path files unless `--yes` is also provided.
-- `lazy-folders add` does not copy the target folder's top-level `.gitignore`, any `.git` directory, or internal `.lazy-folders.yml` metadata into saved content.
-- `lazy-folders add` can create a missing local target-folder `.gitignore` containing `*`; `--yes` accepts that prompt automatically.
-- `lazy-folders pull` preserves destination-only local files. Existing same-path files are skipped by default and replaced only with `--overwrite`.
-- `lazy-folders pull --overwrite` prompts before replacing same-path local files unless `--yes` is also provided.
-- `lazy-folders pull` does not copy saved top-level `.gitignore` files, any `.git` directory, or internal `.lazy-folders.yml` metadata into local project content.
-- `lazy-folders pull --use-template <project-folder>` reads from the named portfolio project without creating metadata for the current project.
-- `lazy-folders push` preserves destination-only portfolio files. Existing same-path files are skipped by default and replaced only with `--overwrite`.
-- `lazy-folders push --overwrite` prompts before replacing same-path portfolio files unless `--yes` is also provided.
-- `lazy-folders push` does not copy the target folder's top-level `.gitignore`, any `.git` directory, or internal `.lazy-folders.yml` metadata into saved content.
-- `lazy-folders push --to-project <project-folder>` writes to the named portfolio project and applies that destination before selecting folders for a no-argument push.
-- Lazy folder verification lives in `tests/test_lazy_folders_*.sh`. The acceptance pass covers config initialization, project name resolution, metadata collision handling, copy exclusions, list output, prompt handling, overwrite behavior, template pulls, and explicit push destinations.
-- Destructive mirror sync is intentionally unsupported. Sync commands merge files, preserve destination-only files, and replace same-path files only with `--overwrite`.
+- `dev-garbage-collector` refuses to run from `/`, from your home directory, or from a directory without `.git`, `pyproject.toml`, `package.json`, or `go.mod`.
+- Default garbage collection removes project-local caches and build outputs for Python, JavaScript, and Go.
+- `--dependencies` also removes `node_modules`.
+- `--go-cache` runs `go clean -cache -testcache`, which affects Go caches outside the project directory.
+- AI sandbox scripts rename `.agents` and `.claude` in the current project to match the selected tool.
+- `ai-sbx-opencode` removes and recreates the current project's OpenCode sandbox before running it.
+
+## Tests
+
+Run the active cleanup tests with:
+
+```sh
+bash tests/test_clean_garbage_collector.sh
+```
+
+There are also `tests/test_lazy_folders_*.sh` files. They currently reference
+`development/lazy_folders.py`, which is not present in this repository and is
+not installed by the Makefile.
+
+Shell syntax checks:
+
+```sh
+bash -n development/clean_garbage_collector.sh
+bash -n development/sandbox_launcher.sh
+bash -n ai/sbx_codex.sh
+bash -n ai/sbx_claude.sh
+bash -n ai/sbx_opencode.sh
+```
 
 ## Notes for AI Agents
 
-Use this section as the operating guide when modifying the repository.
-
-- Prefer updating source scripts and then documenting the matching installed command in this README.
-- Keep command names in sync with the `Makefile`; it is the source of truth for installed symlinks.
-- Do not assume every script is installed. `ai/sbx_cline.sh` is present but not currently linked by `make create`.
-- Preserve the current version string in the README unless a version bump is explicitly requested. Version replacement is configured in `.bumpversion.toml`.
-- The scripts are personal automation scripts, not a packaged CLI. Avoid adding dependency managers or project structure unless requested.
-- Be careful with destructive shell commands. Several scripts intentionally remove local directories or generated files.
-- When adding a new command, update both `Makefile` targets: `create` for the symlink and executable bit, and `clean` for removing the symlink.
-- Keep paths explicit. Some scripts rely on `~/scripts`, `/usr/local/bin`, and macOS application paths.
-
-## Maintenance Checklist
-
-When changing behavior:
-
-1. Update the relevant script.
-2. Update the command table in this README.
-3. Update installation links in the `Makefile` if a command is added, renamed, or removed.
-4. Run a syntax check for edited shell scripts where practical:
-
-   ```sh
-   bash -n path/to/script.sh
-   ```
-
-5. For Python changes, run:
-
-   ```sh
-   python3 -m py_compile path/to/script.py
-   ```
+- Keep command names in sync with `Makefile`; it is the source of truth for installed symlinks.
+- Preserve the README version string unless a version bump is explicitly requested. Version replacement is configured in `.bumpversion.toml`.
+- These are personal automation scripts, not a packaged CLI. Avoid adding dependency managers or project structure unless requested.
+- When adding a command, update both Makefile targets: `create` for the symlink and executable bit, and `clean` for symlink removal.
+- Be careful with destructive shell commands. Several scripts intentionally remove local directories, generated files, or sandboxes.
