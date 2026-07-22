@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-mv ./.agents ./.claude | True
+mv ./.claude ./.agents | True
 
 project_name="${PWD##*/}"
 project_name="${project_name//[^[:alnum:]-]/-}"
