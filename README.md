@@ -189,6 +189,20 @@ The copied content includes:
 It then replaces `<pypi_project>` in `publish-pypi.yml` with the current
 directory name.
 
+## Vendored Agent Skills
+
+The `remove-ai-marks` agent skill is maintained upstream in the
+[`watermarks-remover`](https://github.com/guillaumemeyer/watermarks-remover)
+repository and is included here as a squashed Git subtree at
+`ai/lazy-ai-config/.agents/skills/remove-ai-marks/`. Consequently,
+`ai-lazy-init` copies the skill into newly initialized projects along with the
+other shared agent configuration.
+
+The subtree is committed as ordinary files, so a normal clone includes the
+complete skill without additional initialization. Updating or removing it
+requires the subtree-specific workflow documented in
+[`SUBTREES.md`](SUBTREES.md).
+
 ## Safety Notes
 
 - `bouli-sandbox` runs `rm -r ~/sandbox`, so it deletes the existing sandbox before recreating it.
